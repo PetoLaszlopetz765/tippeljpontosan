@@ -286,7 +286,7 @@ export default function VersenyPage() {
                             // Helyes tippelők (6 pontosok, nem admin)
                             const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
                             const winCount = winners.length;
-                            return bets.map(bet => {
+                            return bets.map((bet: any) => {
                               let wonCredit = 0;
                               if (
                                 event.finalHomeGoals !== null &&
