@@ -51,9 +51,9 @@ export default function EventsAdminPage() {
     console.log("📥 Loading events...");
     const res = await fetch("/api/events", { cache: "no-store" });
     if (res.ok) {
-      let data = await res.json();
+      let data: Event[] = await res.json();
       // Legújabb kickoffTime legyen elöl
-      data = data.sort((a: Event, b: Event) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime());
+      data = data.sort((a, b) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime());
       console.log("✓ Events loaded:", data.length, "items");
       setEvents(data);
     }
