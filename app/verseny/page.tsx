@@ -280,7 +280,7 @@ export default function VersenyPage() {
                         <tbody className="divide-y divide-gray-200">
                           {(() => {
                             // Csak nem-admin felhasználók tippjei számítanak a poolba
-                            const nonAdminBets = bets.filter(b => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
+                            const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
                             const totalCreditsForEvent = nonAdminBets.reduce((sum, b) => sum + (b.creditSpent || 0), 0);
                             const dailyPool = Math.round(totalCreditsForEvent * 0.6);
                             // Helyes tippelők (6 pontosok, nem admin)
