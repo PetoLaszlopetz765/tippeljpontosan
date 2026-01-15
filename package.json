@@ -10,11 +10,10 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.1",
+    "@prisma/client": "^6.19.2",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "next": "16.1.1",
-    "prisma": "^6.19.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
@@ -30,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "postcss": "^8.5.6",
+    "prisma": "^6.19.2",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5"

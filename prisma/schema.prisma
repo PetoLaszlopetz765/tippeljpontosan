@@ -3,14 +3,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 model Setting {
   id    Int    @id @default(autoincrement())
   key   String @unique
   value String
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model User {
@@ -59,4 +59,3 @@ model CreditPool {
   totalDaily Int @default(0)
   totalChampionship Int @default(0)
 }
-
