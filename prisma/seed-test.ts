@@ -17,12 +17,13 @@ async function main() {
   
   console.log("✅ Meghívó kódok létrehozva:", inviteCodes);
   
-  // 4 teszt felhasználó
+  // 4 teszt felhasználó + 1 admin
   const users = [
-    { username: "testuser1", password: "password123" },
-    { username: "testuser2", password: "password123" },
-    { username: "testuser3", password: "password123" },
-    { username: "testuser4", password: "password123" },
+    { username: "testuser1", password: "password123", role: "USER" },
+    { username: "testuser2", password: "password123", role: "USER" },
+    { username: "testuser3", password: "password123", role: "USER" },
+    { username: "testuser4", password: "password123", role: "USER" },
+    { username: "admin", password: "TolEdo1975", role: "ADMIN" },
   ];
   for (const user of users) {
     const hashedPassword = await bcrypt.hash(user.password, 10);
@@ -32,11 +33,11 @@ async function main() {
       create: {
         username: user.username,
         password: hashedPassword,
-        role: "USER",
+        role: user.role,
         points: 0,
       },
     });
-    console.log(`✅ Teszt felhasználó: ${created.username}`);
+    console.log(`✅ Felhasználó: ${created.username} (${user.role})`);
   }
 }
 
