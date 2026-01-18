@@ -21,6 +21,7 @@ interface Bet {
   predictedHomeGoals: number;
   predictedAwayGoals: number;
   pointsAwarded: number;
+  creditSpent: number;
   user: {
     id: number;
     username: string;
