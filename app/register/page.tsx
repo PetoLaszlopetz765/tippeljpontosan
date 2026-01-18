@@ -14,6 +14,7 @@ export default function RegisterPage() {
 
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,20 +78,45 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <label className="block text-sm font-bold text-gray-900 mb-1">
                 Jelszó
               </label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
                   placeholder:text-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                  focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 pr-12"
                 required
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-label={showPassword ? "Jelszó elrejtése" : "Jelszó megjelenítése"}
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-9 transform -translate-y-1/2 text-gray-500 hover:text-blue-700 focus:outline-none"
+                style={{
+                  padding: 0,
+                  background: 'none',
+                  border: 'none',
+                  width: '44px',
+                  height: '44px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '9999px',
+                  touchAction: 'manipulation',
+                }}
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.336-3.234.938-4.675M15 12a3 3 0 11-6 0 3 3 0 016 0zm6.062-4.675A9.956 9.956 0 0122 9c0 5.523-4.477 10-10 10a9.956 9.956 0 01-4.675-.938M3 3l18 18" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm7-2s-3-5-10-5S2 10 2 10s3 5 10 5 10-5 10-5z" /></svg>
+                )}
+              </button>
               <p className="mt-1 text-sm text-gray-700">
                 Tipp: legalább 6–8 karakter javasolt.
               </p>

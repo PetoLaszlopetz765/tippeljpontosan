@@ -9,7 +9,8 @@ export default function AdminPage() {
   const [isClient, setIsClient] = useState(false);
 
   // Meghívókódok állapot
-  const [inviteCodes, setInviteCodes] = useState<string[]>([]);
+  const [inviteCodes, setInviteCodes] = useState<{ code: string }[]>([]);
+  const [copyMsg, setCopyMsg] = useState<string>("");
   const [inviteMsg, setInviteMsg] = useState<string>("");
   const [inviteLoading, setInviteLoading] = useState(false);
 
@@ -22,13 +23,24 @@ export default function AdminPage() {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
-      setInviteCodes(data.codes?.map((c: any) => c.code) || []);
+      // Csak a fel nem használt kódokat mutatjuk (used == false)
+      setInviteCodes((data.codes || []).filter((c: any) => c.used === false));
     } catch {
       setInviteMsg("Hiba a meghívókódok lekérdezésekor.");
     } finally {
       setInviteLoading(false);
     }
   }
+  const handleCopy = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopyMsg(`Kimásolva: ${code}`);
+      setTimeout(() => setCopyMsg("") , 1200);
+    } catch {
+      setCopyMsg("Nem sikerült másolni");
+      setTimeout(() => setCopyMsg("") , 1200);
+    }
+  };
 
   async function handleGenerateInvite() {
     if (!token) return;
@@ -129,16 +141,26 @@ export default function AdminPage() {
             </button>
             {inviteMsg && <div className="text-blue-700 font-semibold mb-2">{inviteMsg}</div>}
             <div className="mt-4">
-              <h3 className="font-bold mb-2">Összes meghívókód:</h3>
+              <h3 className="font-bold mb-2">Fel nem használt meghívókódok:</h3>
               {inviteCodes.length === 0 ? (
-                <div className="text-gray-500">Nincs még meghívókód.</div>
+                <div className="text-gray-500">Nincs felhasználatlan meghívókód.</div>
               ) : (
-                <ul className="text-sm text-gray-900 space-y-1">
-                  {inviteCodes.map((code) => (
-                    <li key={code} className="font-mono bg-gray-50 rounded px-2 py-1 border border-gray-200 inline-block">{code}</li>
+                <ul className="space-y-2">
+                  {inviteCodes.map((c) => (
+                    <li key={c.code}>
+                      <button
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-blue-300 bg-white font-mono text-lg font-bold text-blue-900 hover:bg-blue-50 active:bg-blue-100 transition cursor-pointer select-all"
+                        onClick={() => handleCopy(c.code)}
+                        title="Kattints a másoláshoz"
+                      >
+                        <span>{c.code}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 ml-2 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16h8M8 12h8m-8-4h8M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                      </button>
+                    </li>
                   ))}
                 </ul>
               )}
+              {copyMsg && <div className="mt-4 text-green-700 font-bold text-center">{copyMsg}</div>}
             </div>
           </div>
           {/* Hard reset gomb */}

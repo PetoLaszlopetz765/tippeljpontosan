@@ -164,9 +164,10 @@ export default function TippelesPage() {
             </div>
           )}
 
-          {events.filter(e => isEventOpen(e.status)).map((event) => {
+          {events.filter(e => !(e.id in userBets)).map((event) => {
+            // Csak azokat az eseményeket mutatjuk, amikre MÉG NEM tippelt a user (nyitott vagy zárt is lehet)
             const open = isEventOpen(event.status);
-            const hasUserBet = event.id in userBets;
+            const hasUserBet = false; // ezekre biztosan nem tippelt
 
             return (
               <div

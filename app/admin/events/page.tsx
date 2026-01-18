@@ -428,7 +428,7 @@ export default function EventsAdminPage() {
                 </p>
               )}
 
-              {events.map((e) => {
+              {events.filter(e => e.finalHomeGoals === null || e.finalAwayGoals === null).map((e) => {
                 const open = isEventOpen(e.status);
                 return (
                   <div
