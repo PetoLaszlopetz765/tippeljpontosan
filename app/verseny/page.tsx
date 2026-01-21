@@ -346,77 +346,140 @@ export default function VersenyPage() {
                       </div>
                     </div>
                     {/* Tipp lista */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-purple-50 border-b border-purple-200">
-                            <th className="px-4 py-3 text-left font-semibold text-gray-900">Játékos</th>
-                            <th className="px-4 py-3 text-center font-semibold text-gray-900">Tippje</th>
-                            <th className="px-4 py-3 text-center font-semibold text-gray-900">Pont</th>
-                            <th className="px-4 py-3 text-center font-semibold text-gray-900">Nyeremény kredit</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {(() => {
-                            const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
-                            const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
-                            const winCount = winners.length;
-                            // Az esemény DailyPool-ját az event objektumból kapjuk (ha van)
-                            const eventDailyPool = (event as any).dailyPool;
-                            console.log(`Event ${event.id} (${event.homeTeam} - ${event.awayTeam}): dailyPool =`, eventDailyPool);
-                            const totalDistributed = eventDailyPool?.totalDistributed || 0;
-                            
-                            return bets.map((bet: any) => {
-                              let wonCredit = 0;
-                              if (
-                                event.finalHomeGoals !== null &&
-                                bet.pointsAwarded === 6 &&
-                                winCount > 0 &&
-                                bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
-                                totalDistributed > 0
-                              ) {
-                                wonCredit = Math.floor(totalDistributed / winCount);
-                              }
-                              return (
-                                <tr key={bet.id} className="hover:bg-gray-50">
-                                  <td className="px-4 py-3">
-                                    <span className="font-semibold text-gray-900">{bet.user.username}</span>
-                                  </td>
-                                  <td className="px-4 py-3 text-center">
-                                    <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
-                                      {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-center">
-                                    <span className={`inline-block rounded px-2 py-1 font-bold ${
-                                      bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
-                                      bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
-                                      bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
-                                      "bg-purple-50 text-purple-900"
-                                    }`}>
-                                      {bet.pointsAwarded}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-center">
-                                    {event.finalHomeGoals !== null ? (
-                                      wonCredit > 0 ? (
-                                        <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
-                                          {wonCredit}
-                                        </span>
+                    {(() => {
+                      const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
+                      const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
+                      const winCount = winners.length;
+                      // Az esemény DailyPool-ját az event objektumból kapjuk (ha van)
+                      const eventDailyPool = (event as any).dailyPool;
+                      console.log(`Event ${event.id} (${event.homeTeam} - ${event.awayTeam}): dailyPool =`, eventDailyPool);
+                      const totalDistributed = eventDailyPool?.totalDistributed || 0;
+
+                      // Asztali nézet: táblázat
+                      const tableView = (
+                        <div className="overflow-x-auto hidden md:block">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-purple-50 border-b border-purple-200">
+                                <th className="px-4 py-3 text-left font-semibold text-gray-900">Játékos</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Tippje</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Pont</th>
+                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Nyeremény kredit</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {bets.map((bet: any) => {
+                                let wonCredit = 0;
+                                if (
+                                  event.finalHomeGoals !== null &&
+                                  bet.pointsAwarded === 6 &&
+                                  winCount > 0 &&
+                                  bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
+                                  totalDistributed > 0
+                                ) {
+                                  wonCredit = Math.floor(totalDistributed / winCount);
+                                }
+                                return (
+                                  <tr key={bet.id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3">
+                                      <span className="font-semibold text-gray-900">{bet.user.username}</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
+                                        {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className={`inline-block rounded px-2 py-1 font-bold ${
+                                        bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
+                                        bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
+                                        bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
+                                        "bg-purple-50 text-purple-900"
+                                      }`}>
+                                        {bet.pointsAwarded}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      {event.finalHomeGoals !== null ? (
+                                        wonCredit > 0 ? (
+                                          <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                                            {wonCredit}
+                                          </span>
+                                        ) : (
+                                          <span className="text-gray-400">0</span>
+                                        )
                                       ) : (
-                                        <span className="text-gray-400">0</span>
-                                      )
+                                        <span className="text-gray-400">-</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+
+                      // Mobil nézet: kártyák
+                      const mobileView = (
+                        <div className="grid gap-3 md:hidden">
+                          {bets.map((bet: any) => {
+                            let wonCredit = 0;
+                            if (
+                              event.finalHomeGoals !== null &&
+                              bet.pointsAwarded === 6 &&
+                              winCount > 0 &&
+                              bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
+                              totalDistributed > 0
+                            ) {
+                              wonCredit = Math.floor(totalDistributed / winCount);
+                            }
+                            return (
+                              <div key={bet.id} className="border border-purple-200 rounded-xl p-3 bg-purple-50/40">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-semibold text-gray-900">{bet.user.username}</span>
+                                  <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                                    bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
+                                    bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
+                                    bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
+                                    "bg-purple-50 text-purple-900"
+                                  }`}>
+                                    {bet.pointsAwarded}p
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm mb-2">
+                                  <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
+                                    {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
+                                  </span>
+                                  <span className="text-gray-600">Tipp</span>
+                                </div>
+                                <div className="text-sm flex items-center justify-between">
+                                  <span className="text-gray-700">Nyeremény:</span>
+                                  {event.finalHomeGoals !== null ? (
+                                    wonCredit > 0 ? (
+                                      <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                                        {wonCredit}
+                                      </span>
                                     ) : (
-                                      <span className="text-gray-400">-</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            });
-                          })()}
-                        </tbody>
-                      </table>
-                    </div>
+                                      <span className="text-gray-400">0</span>
+                                    )
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+
+                      return (
+                        <>
+                          {tableView}
+                          {mobileView}
+                        </>
+                      );
+                    })()}
                   </div>
                 );
               });

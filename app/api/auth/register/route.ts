@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { username, password, inviteCode } = body;
+    const { username, password, inviteCode, role } = body;
 
     if (!username || !password || !inviteCode) {
       return NextResponse.json(
@@ -39,6 +42,23 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Role kezelés: ha ADMIN-t akar létrehozni, ellenőrizzük hogy admin-e
+    let userRole = "USER";
+    if (role === "ADMIN") {
+      const authHeader = req.headers.get("authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          const adminUser = await prisma.user.findUnique({ where: { id: decoded.userId } });
+          if (adminUser && adminUser.role === "ADMIN") {
+            userRole = "ADMIN";
+          }
+        } catch (err) {
+          // Invalid token, stay USER
+        }
+      }
+    }
 
     // Kezdő kredit lekérése a Setting táblából
     let initialCredits = 0;
@@ -52,6 +72,7 @@ export async function POST(req: NextRequest) {
         username,
         password: hashedPassword,
         credits: initialCredits,
+        role: userRole,
       },
     });
 

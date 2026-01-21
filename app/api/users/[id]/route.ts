@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
@@ -38,7 +39,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     const userId = parseInt(params.id);
 
     const body = await req.json();
-    const { username, role, points } = body;
+    const { username, role, points, password } = body;
 
     // Check if username is taken by another user
     if (username) {
@@ -54,12 +55,19 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       }
     }
 
+    // Hash password if provided
+    let hashedPassword: string | undefined;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
         ...(username && { username }),
         ...(role && { role }),
         ...(points !== undefined && { points }),
+        ...(hashedPassword && { password: hashedPassword }),
       },
       select: {
         id: true,

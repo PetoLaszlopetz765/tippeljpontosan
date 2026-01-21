@@ -17,8 +17,9 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [newUser, setNewUser] = useState({ username: "", password: "", inviteCode: "" });
+  const [newUser, setNewUser] = useState({ username: "", password: "", inviteCode: "", role: "USER" });
   const [creditEdit, setCreditEdit] = useState<{ [userId: string]: string }>({});
+  const [passwordEdit, setPasswordEdit] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -76,13 +77,14 @@ export default function AdminUsersPage() {
           username: newUser.username,
           password: newUser.password,
           inviteCode: newUser.inviteCode,
+          role: newUser.role,
         }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || "Hiba a felhasználó létrehozásakor");
       }
-      setNewUser({ username: "", password: "", inviteCode: "" });
+      setNewUser({ username: "", password: "", inviteCode: "", role: "USER" });
       fetchUsers(token);
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
@@ -116,6 +118,34 @@ export default function AdminUsersPage() {
       }
       setCreditEdit((prev) => ({ ...prev, [userId]: "" }));
       fetchUsers(token);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
+    }
+  };
+
+  const handlePasswordUpdate = async (userId: string) => {
+    if (!token) return;
+    const password = passwordEdit[userId];
+    if (!password || password.length < 3) {
+      setError("Érvénytelen jelszó (minimum 3 karakter)!");
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba a jelszó módosításakor");
+      }
+      setPasswordEdit((prev) => ({ ...prev, [userId]: "" }));
+      alert("Jelszó sikeresen módosítva!");
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
     }
@@ -171,6 +201,17 @@ export default function AdminUsersPage() {
                 className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
               />
             </div>
+            <div className="flex flex-col flex-1 w-full">
+              <label className="text-sm font-semibold mb-1 text-gray-900">Szerepkör</label>
+              <select
+                value={newUser.role}
+                onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
+              >
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
             <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-6 py-2 rounded-xl shadow w-full md:w-auto">Létrehozás</button>
           </form>
         </div>
@@ -183,11 +224,12 @@ export default function AdminUsersPage() {
                 <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
                 <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
                 <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit módosítás</th>
+                <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
               </tr>
             </thead>
             <tbody>
               {Array.isArray(users) && users.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
+                <tr><td colSpan={6} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
               ) : (Array.isArray(users) && users.length > 0 ? (
                 users.map(user => (
                   <tr key={user.id} className="border-t border-gray-100 hover:bg-blue-50">
@@ -228,6 +270,23 @@ export default function AdminUsersPage() {
                           }}
                         >
                           Törlés
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="flex flex-row gap-2 items-center">
+                        <input
+                          type="password"
+                          value={passwordEdit[user.id] || ""}
+                          onChange={e => setPasswordEdit({ ...passwordEdit, [user.id]: e.target.value })}
+                          className="border border-purple-300 rounded-xl px-2 py-1 w-28 text-gray-900 bg-white shadow-sm"
+                          placeholder="Új jelszó"
+                        />
+                        <button
+                          onClick={() => handlePasswordUpdate(user.id)}
+                          className="bg-purple-700 hover:bg-purple-900 text-white font-bold px-3 py-1 rounded-xl shadow"
+                        >
+                          Módosít
                         </button>
                       </div>
                     </td>
