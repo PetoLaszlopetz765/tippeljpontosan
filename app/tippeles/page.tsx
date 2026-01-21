@@ -118,7 +118,7 @@ export default function TippelesPage() {
       const data = await res.json();
       setMessage(data.message || "✅ Tipp(ek) sikeresen leadva!");
       setBets({}); // Töröljük a form mezőket
-      
+
       // Felhasználó tippjeit újratöltjük
       setTimeout(async () => {
         const betsRes = await fetch("/api/bets/my-bets", {
@@ -137,6 +137,9 @@ export default function TippelesPage() {
           setUserBets(betsMap);
         }
       }, 500);
+
+      // ÚJ: Értesítjük a verseny oldalt, hogy frissítse a tippeket
+      localStorage.setItem("refreshBets", Date.now().toString());
     } else {
       const data = await res.json();
       setMessage(data.message || "❌ Hiba történt a tipp leadásakor.");

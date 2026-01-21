@@ -79,7 +79,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
   }
 }
 
-export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Auth check
     const authHeader = req.headers.get("authorization");
@@ -104,13 +104,16 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
     // Admin check
     if (decoded.role !== "ADMIN") {
       return NextResponse.json(
-        { message: "Nincs jogosultságod" },
+        { message: "Csak admin törölhet!" },
         { status: 403 }
       );
     }
 
-    const params = await props.params;
-    const userId = parseInt(params.id);
+    const { id } = await params;
+    const userId = Number(id);
+    if (!id || isNaN(userId)) {
+      return NextResponse.json({ message: "Érvénytelen vagy hiányzó user ID" }, { status: 400 });
+    }
 
     // Delete user's bets first (cascade)
     await prisma.bet.deleteMany({
@@ -122,11 +125,11 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
       where: { id: userId },
     });
 
-    return NextResponse.json({ message: "Felhasználó törölve" });
+    return NextResponse.json({ message: "Felhasználó és tippjei törölve." });
   } catch (err) {
     console.error("Delete user error:", err);
     return NextResponse.json(
-      { message: "Hiba történt" },
+      { message: "Hiba a törlés során." },
       { status: 500 }
     );
   }

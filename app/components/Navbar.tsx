@@ -55,6 +55,7 @@ export default function Navbar() {
     // Start timer on mount
     resetTimer();
 
+    // --- (REMOVED) Logout on browser/tab close ---
     return () => {
       window.removeEventListener("storage", updateNavbarState);
       activityEvents.forEach(evt => window.removeEventListener(evt, resetTimer));

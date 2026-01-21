@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
         username: true,
         role: true,
         points: true,
+        credits: true,
       },
       orderBy: {
         username: "asc",

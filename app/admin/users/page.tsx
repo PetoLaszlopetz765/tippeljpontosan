@@ -1,446 +1,241 @@
+
 "use client";
-
-
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useState } from "react";
 
 interface User {
-  id: number;
+  id: string;
   username: string;
   role: string;
-  points: number;
+  credits: number;
+  points?: number;
+  [key: string]: any;
 }
 
-export default function UsersAdminPage() {
-    // Kezdő kredit állapotok
-    const [initialCredits, setInitialCredits] = useState<number | null>(null);
-    const [initialCreditsInput, setInitialCreditsInput] = useState<string>("");
-    const [initialCreditsMsg, setInitialCreditsMsg] = useState<string>("");
-    const [initialCreditsLoading, setInitialCreditsLoading] = useState(false);
-
-    // Kezdő kredit lekérése
-    async function loadInitialCredits() {
-      try {
-        const res = await fetch("/api/settings/initial-credits");
-        if (res.ok) {
-          const data = await res.json();
-          setInitialCredits(data.initialCredits);
-          setInitialCreditsInput(String(data.initialCredits));
-        }
-      } catch {}
-    }
-
-    useEffect(() => {
-      if (typeof window !== 'undefined') {
-        loadInitialCredits();
-      }
-    }, []);
-
-    async function handleInitialCreditsSubmit(e: React.FormEvent) {
-      e.preventDefault();
-      setInitialCreditsLoading(true);
-      setInitialCreditsMsg("");
-      try {
-        const res = await fetch("/api/settings/initial-credits", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({ value: Number(initialCreditsInput) }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setInitialCreditsMsg("✓ " + data.message);
-          setInitialCredits(Number(initialCreditsInput));
-        } else {
-          setInitialCreditsMsg(data?.message || "Hiba a kezdő kredit mentésekor.");
-        }
-      } catch {
-        setInitialCreditsMsg("Hálózati hiba");
-      } finally {
-        setInitialCreditsLoading(false);
-      }
-    }
+export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("USER");
-  const [message, setMessage] = useState<string>("");
-  const [usersLoading, setUsersLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-  // Kredit szerkesztő állapotok minden userId-hez
-  const [creditInputs, setCreditInputs] = useState<{ [userId: number]: string }>({});
-  const [creditLoading, setCreditLoading] = useState<{ [userId: number]: boolean }>({});
-  const [creditMsg, setCreditMsg] = useState<{ [userId: number]: string }>({});
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [newUser, setNewUser] = useState({ username: "", password: "", inviteCode: "" });
+  const [creditEdit, setCreditEdit] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
-    console.log("🔧 USERS ADMIN PAGE MOUNTED");
-    setIsClient(true);
-    const savedToken = localStorage.getItem("token");
-    console.log("📦 Token from localStorage:", savedToken ? "✓ Found (length: " + savedToken.length + ")" : "✗ Not found");
-    setToken(savedToken);
-  }, []);
-
-  async function loadUsers() {
-    if (!token) {
-      console.log("⚠️  Token nincs meg, nem lehet felhasználókat betölteni");
+    const storedToken = localStorage.getItem("token");
+    if (!storedToken) {
+      window.location.href = "/login";
       return;
     }
+    setToken(storedToken);
+    checkAdmin(storedToken);
+  }, []);
 
+  const checkAdmin = async (token: string) => {
+    try {
+      const res = await fetch("/api/admin", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      setIsAdmin(true);
+      fetchUsers(token);
+    } catch {
+      setIsAdmin(false);
+      window.location.href = "/";
+    }
+  };
+
+  const fetchUsers = async (token: string) => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
-      } else if (res.status === 401) {
-        console.log("✗ Unauthorized - redirecting to login");
-        window.location.href = "/login";
-      } else {
-        console.error("✗ Error loading users:", res.status);
-      }
-    } catch (err) {
-      console.error("✗ Network error:", err);
+      if (!res.ok) throw new Error("Hiba a felhasználók lekérdezésekor");
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  useEffect(() => {
-    console.log("🔧 useEffect: isClient =", isClient);
-    if (isClient) {
-      if (token) {
-        console.log("✅ Client-side and token available, loading users...");
-        loadUsers();
-      } else {
-        console.log("⚠️  Token nincs meg, bejelentkezés szükséges");
-        setMessage("⚠️  Nincs bejelentkezve! Az admin funkciók eléréséhez be kell jelentkezned.");
-      }
-    } else {
-      console.log("✗ Not yet client-side");
-    }
-  }, [isClient, token]);
-
-  async function handleCreateUser(e: React.FormEvent) {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
-    setUsersLoading(true);
-
-    if (!token) {
-      setMessage("✗ Nincs bejelentkezve! Csak adminok tudnak felhasználót létrehozni.");
-      window.location.href = "/login";
-      setUsersLoading(false);
-      return;
-    }
-
+    if (!token) return;
+    setError(null);
     try {
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          username: newUsername,
-          password: newPassword,
-          role: newRole,
+          username: newUser.username,
+          password: newUser.password,
+          inviteCode: newUser.inviteCode,
         }),
       });
-
-      if (res.ok) {
-        setMessage("✅ Felhasználó létrehozva!");
-        setNewUsername("");
-        setNewPassword("");
-        setNewRole("USER");
-        await loadUsers();
-      } else if (res.status === 401) {
-        setMessage("✗ A session lejárt! Kérjük jelentkezz be újra.");
-        window.location.href = "/login";
-      } else {
-        const data = await res.json().catch(() => null);
-        setMessage(data?.message || "✗ Hiba a felhasználó létrehozásakor.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba a felhasználó létrehozásakor");
       }
-    } catch (err) {
-      console.error(err);
-      setMessage("✗ Hálózati hiba történt.");
-    } finally {
-      setUsersLoading(false);
+      setNewUser({ username: "", password: "", inviteCode: "" });
+      fetchUsers(token);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
     }
-  }
+  };
 
-  async function deleteUser(userId: number) {
-    if (!confirm("Biztosan törlöd ezt a felhasználót?")) return;
+  const handleCreditChange = (userId: string, value: string) => {
+    setCreditEdit((prev) => ({ ...prev, [userId]: value }));
+  };
 
-    if (!token) {
-      setMessage("✗ Nincs bejelentkezve!");
-      window.location.href = "/login";
+  const handleCreditUpdate = async (userId: string) => {
+    if (!token) return;
+    const amount = creditEdit[userId];
+    if (!amount || isNaN(Number(amount))) {
+      setError("Érvénytelen összeg!");
       return;
     }
-
+    setError(null);
     try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` },
+      const res = await fetch(`/api/users/${userId}/credit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount: Number(amount) }),
       });
-
-      if (res.ok) {
-        setMessage("✅ Felhasználó törölve!");
-        await loadUsers();
-      } else if (res.status === 401) {
-        setMessage("✗ A session lejárt! Kérjük jelentkezz be újra.");
-        window.location.href = "/login";
-      } else {
-        setMessage("✗ Hiba a törléskor.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba a kredit módosításakor");
       }
-    } catch (err) {
-      console.error(err);
-      setMessage("✗ Hálózati hiba történt.");
+      setCreditEdit((prev) => ({ ...prev, [userId]: "" }));
+      fetchUsers(token);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
     }
-  }
+  };
+
+  if (loading) return <div>Betöltés...</div>;
+  if (!isAdmin) return null;
+  if (error) return <div style={{ color: "red" }}>{error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-10">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <header className="mb-8">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <h1 className="text-3xl font-extrabold text-gray-900">
-              👥 Felhasználó kezelés
-            </h1>
-            <Link
-              href="/admin"
-              className="px-4 py-2 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-900 transition"
-            >
-              ← Vissza az admin felületre
-            </Link>
-          </div>
-          <p className="text-gray-700">
-            Felhasználók létrehozása, szerkesztése és törlése
+          <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-3">
+            👤 Felhasználók kezelése
+          </h1>
+          <p className="text-center text-gray-700 text-lg mb-4">
+            Itt tudod az összes felhasználót, pontszámukat és kreditjüket áttekinteni, módosítani.
           </p>
         </header>
-
-        {!token && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
-            <p className="text-red-800 font-semibold">⚠️  Nincsenek bejelentkezve! Az admin funkciók eléréséhez be kell jelentkezned.</p>
-          </div>
-        )}
-
-        <div className="space-y-8">
-          {/* Kezdő kredit szerkesztése */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-extrabold text-gray-900 mb-4">Kezdő kredit beállítása</h2>
-            <form onSubmit={handleInitialCreditsSubmit} className="flex flex-col md:flex-row items-center gap-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-6 mb-8">
+          <form onSubmit={handleCreateUser} className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex flex-col flex-1 w-full">
+              <label className="text-sm font-semibold mb-1 text-gray-900">Felhasználónév</label>
               <input
-                type="number"
-                value={initialCreditsInput}
-                onChange={e => setInitialCreditsInput(e.target.value)}
-                className="w-32 h-10 px-3 rounded border border-gray-300 text-gray-900 font-semibold text-lg"
-                min={0}
-                disabled={initialCreditsLoading}
+                type="text"
+                placeholder="Felhasználónév"
+                value={newUser.username}
+                onChange={e => setNewUser({ ...newUser, username: e.target.value })}
+                required
+                className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
               />
-              <button
-                type="submit"
-                disabled={initialCreditsLoading || !initialCreditsInput}
-                className="px-4 py-2 bg-green-600 text-white rounded font-bold text-base hover:bg-green-700 transition"
-              >
-                {initialCreditsLoading ? "Mentés..." : "Mentés"}
-              </button>
-              {initialCreditsMsg && <span className="text-green-700 font-semibold ml-2">{initialCreditsMsg}</span>}
-            </form>
-            {initialCredits !== null && (
-              <p className="text-gray-700 mt-2">Jelenlegi kezdő kredit: <span className="font-bold">{initialCredits}</span></p>
-            )}
-          </div>
-          {/* Új felhasználó form */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-extrabold text-gray-900 mb-4">
-              Új felhasználó létrehozása
-            </h2>
-
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-1">
-                    Felhasználónév
-                  </label>
-                  <input
-                    type="text"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    placeholder="pl. szilard123"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
-                      placeholder:text-gray-400
-                      focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-1">
-                    Jelszó
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
-                      placeholder:text-gray-400
-                      focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-1">
-                    Szerepkör
-                  </label>
-                  <select
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
-                      focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-500"
-                  >
-                    <option value="USER">USER</option>
-                    <option value="ADMIN">ADMIN</option>
-                  </select>
-                </div>
-              </div>
-
-              {message && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center">
-                  <p className="text-gray-900 font-semibold">{message}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={usersLoading}
-                className={`w-full h-12 rounded-2xl text-white font-extrabold shadow transition
-                  ${usersLoading ? "bg-purple-400 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800 active:bg-purple-900"}`}
-              >
-                {usersLoading ? "Létrehozás..." : "Felhasználó létrehozása"}
-              </button>
-            </form>
-          </div>
-
-          {/* Felhasználók listája */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-extrabold text-gray-900">
-                Felhasználók listája
-              </h2>
-              <p className="text-sm text-gray-700 mt-1">
-                Összesen: <span className="font-bold text-gray-900">{users.length}</span> felhasználó
-              </p>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Felhasználónév</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Szerepkör</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Pontok</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Kredit</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Műveletek</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {users.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center">
-                        <p className="text-gray-600 font-semibold">Nincsenek felhasználók.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <span className="font-semibold text-gray-900">{user.username}</span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
-                            user.role === "ADMIN" 
-                              ? "bg-red-50 text-red-800" 
-                              : "bg-blue-50 text-blue-800"
-                          }`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="font-bold text-gray-900">{user.points}</span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <form
-                            onSubmit={async (e) => {
-                              e.preventDefault();
-                              setCreditLoading((prev) => ({ ...prev, [user.id]: true }));
-                              setCreditMsg((prev) => ({ ...prev, [user.id]: "" }));
-                              try {
-                                const res = await fetch(`/api/users/${user.id}/credit`, {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                    "Authorization": `Bearer ${token}`,
-                                  },
-                                  body: JSON.stringify({ amount: Number(creditInputs[user.id]) }),
-                                });
-                                const data = await res.json();
-                                if (res.ok) {
-                                  setCreditMsg((prev) => ({ ...prev, [user.id]: "✓ " + data.message }));
-                                  await loadUsers();
-                                } else {
-                                  setCreditMsg((prev) => ({ ...prev, [user.id]: data?.message || "Hiba a kredit módosításakor." }));
-                                }
-                              } catch {
-                                setCreditMsg((prev) => ({ ...prev, [user.id]: "Hálózati hiba" }));
-                              } finally {
-                                setCreditLoading((prev) => ({ ...prev, [user.id]: false }));
-                                setCreditInputs((prev) => ({ ...prev, [user.id]: "" }));
-                              }
-                            }}
-                            className="flex items-center gap-2 justify-center"
-                          >
-                            <input
-                              type="number"
-                              value={creditInputs[user.id] || ""}
-                              onChange={e => setCreditInputs((prev) => ({ ...prev, [user.id]: e.target.value }))}
-                              placeholder="±kredit"
-                              className="w-20 h-8 px-2 rounded border border-gray-300 text-gray-900 font-semibold text-sm"
-                              disabled={creditLoading[user.id]}
-                            />
-                            <button
-                              type="submit"
-                              disabled={creditLoading[user.id] || !creditInputs[user.id]}
-                              className="px-2 py-1 bg-yellow-400 text-white rounded font-bold text-xs hover:bg-yellow-500 transition"
-                            >
-                              {creditLoading[user.id] ? "Mentés..." : "Kredit módosít"}
-                            </button>
-                          </form>
-                          {creditMsg[user.id] && <div className="text-xs text-center mt-1 text-yellow-700">{creditMsg[user.id]}</div>}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => deleteUser(user.id)}
-                            className="px-3 py-1 bg-red-50 text-red-800 rounded-lg hover:bg-red-100 transition font-semibold text-sm"
-                          >
-                            🗑️  Törlés
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="flex flex-col flex-1 w-full">
+              <label className="text-sm font-semibold mb-1 text-gray-900">Jelszó</label>
+              <input
+                type="password"
+                placeholder="Jelszó"
+                value={newUser.password}
+                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                required
+                className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
+              />
             </div>
-          </div>
+            <div className="flex flex-col flex-1 w-full">
+              <label className="text-sm font-semibold mb-1 text-gray-900">Meghívókód</label>
+              <input
+                type="text"
+                placeholder="Meghívókód"
+                value={newUser.inviteCode}
+                onChange={e => setNewUser({ ...newUser, inviteCode: e.target.value })}
+                required
+                className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
+              />
+            </div>
+            <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-6 py-2 rounded-xl shadow w-full md:w-auto">Létrehozás</button>
+          </form>
         </div>
-
-        <div className="mt-6 text-center text-sm text-gray-700">
-          made by <span className="font-bold text-gray-900">@petz765</span>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-blue-50">
+                <th className="py-2 px-3 text-left text-gray-900 font-bold">Felhasználónév</th>
+                <th className="py-2 px-3 text-left text-gray-900 font-bold">Szerep</th>
+                <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
+                <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
+                <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit módosítás</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.isArray(users) && users.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
+              ) : (Array.isArray(users) && users.length > 0 ? (
+                users.map(user => (
+                  <tr key={user.id} className="border-t border-gray-100 hover:bg-blue-50">
+                    <td className="py-2 px-3 font-semibold text-gray-900">{user.username}</td>
+                    <td className="py-2 px-3 text-blue-800 font-bold">{user.role}</td>
+                    <td className="py-2 px-3 text-gray-900">{typeof user.points === 'number' ? user.points : '-'}</td>
+                    <td className="py-2 px-3">
+                      <span className="font-mono text-base text-gray-900">{user.credits}</span>
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="flex flex-row gap-2 items-center">
+                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handleCreditUpdate(user.id); }}>
+                          <input
+                            type="number"
+                            value={creditEdit[user.id] || ""}
+                            onChange={e => handleCreditChange(user.id, e.target.value)}
+                            className="border border-blue-300 rounded-xl px-2 py-1 w-20 text-gray-900 bg-white shadow-sm"
+                            placeholder="Új kredit"
+                          />
+                          <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow">Módosít</button>
+                        </form>
+                        <button
+                          className="bg-red-600 hover:bg-red-800 text-white font-bold px-3 py-1 rounded-xl shadow ml-2"
+                          title="Felhasználó törlése"
+                          onClick={async () => {
+                            if (!window.confirm(`Biztosan törölni akarod ${user.username} felhasználót? Ez végleges!`)) return;
+                            if (!token) return;
+                            const res = await fetch(`/api/users/${user.id}`, {
+                              method: "DELETE",
+                              headers: { Authorization: `Bearer ${token}` },
+                            });
+                            if (res.ok) {
+                              fetchUsers(token);
+                            } else {
+                              const data = await res.json().catch(() => ({}));
+                              alert(data.message || "Hiba a törlés során");
+                            }
+                          }}
+                        >
+                          Törlés
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : null)}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
