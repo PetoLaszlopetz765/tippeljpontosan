@@ -173,11 +173,11 @@ export default function VersenyPage() {
           <h1 className="text-3xl font-extrabold text-gray-900">⚽ Verseny Állása</h1>
           <p className="text-gray-700 mt-2">Játékosok ranglistája és összes tippek</p>
           <div className="flex flex-col md:flex-row gap-4 mt-4 mb-2 items-center justify-center">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-6 py-3 text-yellow-900 font-semibold text-lg">
-              Napi pool (halmozódó): <span className="font-extrabold">{pool.totalDaily} kredit</span>
-            </div>
             <div className="bg-purple-50 border border-purple-200 rounded-xl px-6 py-3 text-purple-900 font-semibold text-lg">
               Bajnoki pool: <span className="font-extrabold">{pool.totalChampionship} kredit</span>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-blue-800 text-sm">
+              💡 Napi pool-ok eseményenként követhetők lent
             </div>
           </div>
           {isAdmin && (
@@ -329,6 +329,20 @@ export default function VersenyPage() {
                       <div className="flex flex-col md:items-end gap-1">
                         <span className="text-sm text-gray-700">Feltett kredit: <span className="font-semibold text-blue-900">{event.creditCost}</span></span>
                         <span className="text-sm text-gray-700">Végeredmény: {event.finalHomeGoals !== null ? <span className="font-semibold text-green-900">{event.finalHomeGoals}–{event.finalAwayGoals}</span> : <span className="text-gray-400">-</span>}</span>
+                        {(() => {
+                          const eventDailyPool = (event as any).dailyPool;
+                          console.log(`Header - Event ${event.id}: dailyPool =`, eventDailyPool);
+                          if (eventDailyPool) {
+                            const poolTotal = eventDailyPool.totalDaily + eventDailyPool.carriedFromPrevious;
+                            const distributed = eventDailyPool.totalDistributed || 0;
+                            if (distributed > 0) {
+                              return <span className="text-sm text-green-700">🏆 Pool szétosztva: <span className="font-semibold">{distributed} kredit</span></span>;
+                            } else if (poolTotal > 0) {
+                              return <span className="text-sm text-yellow-700">💰 Pool halmozódik: <span className="font-semibold">{poolTotal} kredit</span></span>;
+                            }
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                     {/* Tipp lista */}
@@ -345,19 +359,23 @@ export default function VersenyPage() {
                         <tbody className="divide-y divide-gray-200">
                           {(() => {
                             const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
-                            const totalCreditsForEvent = nonAdminBets.reduce((sum: number, b: { creditSpent?: number }) => sum + (b.creditSpent || 0), 0);
-                            const dailyPool = Math.round(totalCreditsForEvent * 0.6);
                             const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
                             const winCount = winners.length;
+                            // Az esemény DailyPool-ját az event objektumból kapjuk (ha van)
+                            const eventDailyPool = (event as any).dailyPool;
+                            console.log(`Event ${event.id} (${event.homeTeam} - ${event.awayTeam}): dailyPool =`, eventDailyPool);
+                            const totalDistributed = eventDailyPool?.totalDistributed || 0;
+                            
                             return bets.map((bet: any) => {
                               let wonCredit = 0;
                               if (
                                 event.finalHomeGoals !== null &&
                                 bet.pointsAwarded === 6 &&
                                 winCount > 0 &&
-                                bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin"
+                                bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
+                                totalDistributed > 0
                               ) {
-                                wonCredit = Math.floor(dailyPool / winCount);
+                                wonCredit = Math.floor(totalDistributed / winCount);
                               }
                               return (
                                 <tr key={bet.id} className="hover:bg-gray-50">

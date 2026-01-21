@@ -12,6 +12,13 @@ interface Event {
   creditCost: number;
   finalHomeGoals?: number | null;
   finalAwayGoals?: number | null;
+  dailyPool?: {
+    id: number;
+    eventId: number;
+    totalDaily: number;
+    carriedFromPrevious: number;
+    totalDistributed: number;
+  } | null;
 }
 
 function isEventOpen(status: Event["status"]) {
@@ -34,6 +41,8 @@ export default function EventsAdminPage() {
   const [isClient, setIsClient] = useState(false);
   const [closingEventId, setClosingEventId] = useState<number | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [poolAmount, setPoolAmount] = useState<{ [eventId: number]: string }>({});
+  const [poolLoading, setPoolLoading] = useState<number | null>(null);
 
   useEffect(() => {
     console.log("🔧 EVENTS ADMIN PAGE MOUNTED");
@@ -56,6 +65,14 @@ export default function EventsAdminPage() {
       data = data.sort((a: { kickoffTime: string }, b: { kickoffTime: string }) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime());
       console.log("✓ Events loaded:", data.length, "items");
       setEvents(data);
+      // Initialize pool amounts from existing data
+      const poolAmounts: { [eventId: number]: string } = {};
+      data.forEach(e => {
+        if (e.dailyPool) {
+          poolAmounts[e.id] = String(e.dailyPool.totalDaily);
+        }
+      });
+      setPoolAmount(poolAmounts);
     }
   }
 
@@ -245,6 +262,46 @@ export default function EventsAdminPage() {
       setMessage("✗ Hálózati hiba történt.");
     } finally {
       setClosingEventId(null);
+    }
+  }
+
+  async function handleUpdatePool(eventId: number) {
+    if (!token) {
+      setMessage("✗ Nincs bejelentkezve!");
+      return;
+    }
+
+    const amount = poolAmount[eventId];
+    if (!amount || isNaN(Number(amount))) {
+      setMessage("✗ Érvénytelen pool összeg!");
+      return;
+    }
+
+    setPoolLoading(eventId);
+    setMessage("");
+
+    try {
+      const res = await fetch(`/api/events/${eventId}/pool`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ totalDaily: Number(amount) }),
+      });
+
+      if (res.ok) {
+        setMessage("✅ Pool sikeresen frissítve!");
+        await loadEvents();
+      } else {
+        const data = await res.json().catch(() => null);
+        setMessage(data?.message || "✗ Hiba a pool frissítésekor.");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("✗ Hálózati hiba történt.");
+    } finally {
+      setPoolLoading(null);
     }
   }
 
@@ -447,6 +504,15 @@ export default function EventsAdminPage() {
                           </span>
                         <span className="ml-4 text-gray-700">Tipp díj:</span>
                         <span className="font-semibold text-green-800">{e.creditCost} kredit</span>
+                        {e.dailyPool && (
+                          <>
+                            <span className="ml-4 text-gray-700">Pool:</span>
+                            <span className="font-semibold text-yellow-800">
+                              {e.dailyPool.totalDaily + e.dailyPool.carriedFromPrevious} kredit
+                              {e.dailyPool.totalDistributed > 0 && <span className="text-green-700"> (szétosztva: {e.dailyPool.totalDistributed})</span>}
+                            </span>
+                          </>
+                        )}
                         </p>
                       </div>
 
@@ -459,6 +525,33 @@ export default function EventsAdminPage() {
                       >
                         {open ? "Nyitott" : "Lezárt"}
                       </span>
+                    </div>
+
+                    {/* Pool kezelés */}
+                    <div className="flex gap-2 items-center border-t pt-3">
+                      <label className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                        💰 Pool kredit:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={poolAmount[e.id] || ""}
+                        onChange={(e2) => setPoolAmount({ ...poolAmount, [e.id]: e2.target.value })}
+                        placeholder="0"
+                        className="flex-1 h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold
+                          focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-500"
+                      />
+                      <button
+                        onClick={() => handleUpdatePool(e.id)}
+                        disabled={poolLoading === e.id}
+                        className={`px-4 py-2 rounded-lg font-bold transition ${
+                          poolLoading === e.id
+                            ? "bg-yellow-300 text-yellow-900 cursor-not-allowed"
+                            : "bg-yellow-500 text-white hover:bg-yellow-600"
+                        }`}
+                      >
+                        {poolLoading === e.id ? "..." : "Frissít"}
+                      </button>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center md:justify-between">

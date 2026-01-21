@@ -109,25 +109,7 @@ export async function POST(req: NextRequest) {
         if (!existingBet) {
           // Új tipp - kredit levonása
           creditSpent += event.creditCost;
-
-          // Közös kredit alap frissítése (60% napi góltotó, 40% pontverseny)
-          const dailyAmount = Math.floor(event.creditCost * 0.6);
-          const championshipAmount = event.creditCost - dailyAmount;
-
-          let creditPool = await tx.creditPool.findFirst();
-          if (!creditPool) {
-            creditPool = await tx.creditPool.create({
-              data: { totalDaily: 0, totalChampionship: 0 },
-            });
-          }
-
-          await tx.creditPool.update({
-            where: { id: creditPool.id },
-            data: {
-              totalDaily: { increment: dailyAmount },
-              totalChampionship: { increment: championshipAmount },
-            },
-          });
+          // DailyPool és CreditPool frissítése az eredmény rögzítésekor történik (result route)
         }
 
         // UPSERT tipp

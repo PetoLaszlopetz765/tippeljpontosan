@@ -32,7 +32,11 @@ export async function GET(req: NextRequest) {
             points: true,
           },
         },
-        event: true,
+        event: {
+          include: {
+            dailyPool: true,
+          },
+        },
       },
       orderBy: [
         { event: { kickoffTime: "desc" } },
@@ -41,7 +45,8 @@ export async function GET(req: NextRequest) {
     });
     console.log("API /bets/all-bets: bets count:", bets.length);
     if (bets.length > 0) {
-      console.log("API /bets/all-bets: first bet:", bets[0]);
+      console.log("API /bets/all-bets: first bet event:", bets[0].event);
+      console.log("API /bets/all-bets: first bet dailyPool:", bets[0].event.dailyPool);
     }
     return NextResponse.json({ bets });
   } catch (err) {

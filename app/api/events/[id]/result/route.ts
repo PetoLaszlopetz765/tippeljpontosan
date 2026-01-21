@@ -171,10 +171,49 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     }
 
 
-    // Napi pool logika: ha nincs telitalálat, halmozódik, döntőnél speciális szabály
+    // Eseményenkénti pool logika: minden eseménynek saját poolja van
     const totalCreditsSpent = allBets.reduce((sum, bet) => sum + (bet.creditSpent || 0), 0);
     const dailyAmount = Math.floor(totalCreditsSpent * 0.6);
     const championshipAmount = totalCreditsSpent - dailyAmount;
+    
+    // Az esemény dátuma
+    const eventDate = new Date(event.kickoffTime);
+    const eventDateString = eventDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // DailyPool létrehozása vagy lekérése az eseményhez
+    let dailyPool = await prisma.dailyPool.findUnique({
+      where: { eventId },
+    });
+
+    if (!dailyPool) {
+      // Új esemény pool: az előző esemény maradékát átveszik (időrendi sorrendben)
+      const previousEvent = await prisma.event.findFirst({
+        where: {
+          kickoffTime: { lt: event.kickoffTime },
+          status: { in: ["CLOSED", "LEZÁRT"] },
+        },
+        orderBy: { kickoffTime: 'desc' },
+        include: { dailyPool: true },
+      });
+      
+      const carriedFromPrevious = previousEvent?.dailyPool?.totalDaily ?? 0;
+      
+      dailyPool = await prisma.dailyPool.create({
+        data: {
+          eventId,
+          date: new Date(eventDateString),
+          totalDaily: dailyAmount,
+          carriedFromPrevious,
+        },
+      });
+    } else {
+      // Pool már létezik, frissítjük (ha újra futtatják az eredményt)
+      dailyPool = await prisma.dailyPool.update({
+        where: { eventId },
+        data: { totalDaily: dailyAmount },
+      });
+    }
+
     let poolCarry = 0;
     let poolDistributed = false;
     let winners: number[] = [];
@@ -203,12 +242,11 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     }
 
     if (winners.length > 0) {
-      // Halmozott pool hozzáadása, ha van
-      const poolObj = await prisma.creditPool.findUnique({ where: { id: 1 } });
-      const carry = poolObj?.totalDaily || 0;
-      const totalToDistribute = dailyAmount + carry;
+      // Esemény pool és átgöngyölésből szét kell osztani
+      const totalToDistribute = dailyPool.totalDaily + dailyPool.carriedFromPrevious;
       const creditPerWinner = winners.length > 0 ? Math.floor(totalToDistribute / winners.length) : 0;
-      // Csak azok kapnak kreditet, akik telitalálatot értek el (winners)
+      
+      // Nyertesek krediteinek növelése
       for (const userId of winners) {
         await prisma.user.update({
           where: { id: userId },
@@ -219,22 +257,36 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
           },
         });
       }
-      // Minden más felhasználó kreditje nem változik!
-      // Napi pool nullázása
+      
+      // Esemény pool nullázása és totalDistributed frissítése
+      await prisma.dailyPool.update({
+        where: { eventId },
+        data: { 
+          totalDaily: 0, 
+          carriedFromPrevious: 0,
+          totalDistributed: totalToDistribute,
+        },
+      });
+      
+      // Bajnoki pool frissítése (globális)
       await prisma.creditPool.upsert({
         where: { id: 1 },
-        update: { totalDaily: 0, totalChampionship: { increment: championshipAmount } },
+        update: { totalChampionship: { increment: championshipAmount } },
         create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
       });
+      
       poolDistributed = true;
     } else {
-      // Nincs telitalálatos: pool halmozódik
+      // Nincs nyertes: esemény pool marad és átgöngyölődik a következő eseményre
+      // A dailyPool már tartalmazza a totalDaily összeget
+      poolCarry = dailyPool.totalDaily + dailyPool.carriedFromPrevious;
+      
+      // Bajnoki pool frissítése (globális)
       await prisma.creditPool.upsert({
         where: { id: 1 },
-        update: { totalDaily: { increment: dailyAmount }, totalChampionship: { increment: championshipAmount } },
-        create: { id: 1, totalDaily: dailyAmount, totalChampionship: championshipAmount },
+        update: { totalChampionship: { increment: championshipAmount } },
+        create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
       });
-      poolCarry = dailyAmount;
     }
 
     console.log("✓ All done!");

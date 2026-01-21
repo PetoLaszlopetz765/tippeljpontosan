@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     const events = await prisma.event.findMany({
+      include: {
+        dailyPool: true,
+      },
       orderBy: { kickoffTime: "asc" },
     });
     return NextResponse.json(events);

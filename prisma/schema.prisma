@@ -38,6 +38,7 @@ model Event {
   finalAwayGoals Int?
   creditCost     Int    @default(100)
   bets           Bet[]
+  dailyPool      DailyPool?
 }
 
 model Bet {
@@ -58,4 +59,16 @@ model CreditPool {
   id         Int @id @default(autoincrement())
   totalDaily Int @default(0)
   totalChampionship Int @default(0)
+}
+
+model DailyPool {
+  id                    Int      @id @default(autoincrement())
+  eventId               Int      @unique
+  event                 Event    @relation(fields: [eventId], references: [id])
+  date                  DateTime @db.Date
+  totalDaily            Int      @default(0)
+  carriedFromPrevious   Int      @default(0)
+  totalDistributed      Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
