@@ -1,4 +1,7 @@
+
 "use client";
+import dynamic from "next/dynamic";
+const SupportBanner = dynamic(() => import("../components/SupportBanner"), { ssr: false });
 interface BetWithEventId extends BetInput {
   eventId: number;
 }
@@ -286,6 +289,9 @@ export default function TippelesPage() {
             </div>
           )}
         </form>
+      </div>
+      <div className="mt-10">
+        <SupportBanner />
       </div>
     </div>
   );

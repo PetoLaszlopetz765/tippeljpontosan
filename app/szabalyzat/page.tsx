@@ -1,4 +1,7 @@
+
 "use client";
+import dynamic from "next/dynamic";
+const SupportBanner = dynamic(() => import("../components/SupportBanner"), { ssr: false });
 
 export default function SzabalyzatPage() {
   return (
@@ -90,6 +93,9 @@ export default function SzabalyzatPage() {
           </section>
 
         </div>
+      </div>
+      <div className="mt-10">
+        <SupportBanner />
       </div>
     </div>
   );

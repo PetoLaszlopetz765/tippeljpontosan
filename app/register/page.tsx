@@ -1,4 +1,7 @@
+
 "use client";
+import dynamic from "next/dynamic";
+const SupportBanner = dynamic(() => import("../components/SupportBanner"), { ssr: false });
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -196,6 +199,9 @@ export default function RegisterPage() {
 
         <div className="mt-6 text-center text-sm text-gray-700">
           made by <span className="font-bold text-gray-900">@petz765</span>
+        </div>
+        <div className="mt-10">
+          <SupportBanner />
         </div>
       </div>
     </div>
