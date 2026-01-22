@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tippelde – Foci VB 2026",
+  title: "Tippelde –",
   description: "Baráti tippjáték – valódi pénz nélkül",
 };
 
