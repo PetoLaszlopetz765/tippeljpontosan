@@ -296,7 +296,7 @@ export default function VersenyPage() {
                               index === 2 ? "bg-orange-600" :
                               "bg-gray-300"
                             }`}>
-                              {index + 1}
+                              {index + 1}.
                             </span>
                           </td>
                           <td className="px-4 py-4">
@@ -352,7 +352,7 @@ export default function VersenyPage() {
                           index === 2 ? "bg-orange-600" :
                           "bg-gray-300"
                         }`}>
-                          {index + 1}
+                          {index + 1}.
                         </span>
                         <div>
                           <div className="font-extrabold text-gray-900">{user.username}</div>

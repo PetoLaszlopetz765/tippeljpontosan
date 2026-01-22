@@ -131,7 +131,7 @@ export default function ProfilPage() {
               <div className="bg-gradient-to-r from-purple-100 to-purple-200 border border-purple-300 rounded-2xl px-8 py-4 text-center shadow-md">
                 <div className="text-lg font-semibold text-purple-900 mb-1">Jelenlegi helyezésed</div>
                 <div className="flex items-center justify-center gap-3">
-                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full font-extrabold text-white text-2xl bg-purple-600">{userRank}</span>
+                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full font-extrabold text-white text-2xl bg-purple-600">{userRank}.</span>
                   <span className="font-bold text-purple-900 text-xl">{profile.username}</span>
                 </div>
               </div>
