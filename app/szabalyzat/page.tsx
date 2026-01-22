@@ -93,10 +93,11 @@ export default function SzabalyzatPage() {
           </section>
 
         </div>
-      </div>
-      <div className="mt-10">
+        <div className="mt-10">
         <SupportBanner />
       </div>
+      </div>
+      
     </div>
   );
 }
