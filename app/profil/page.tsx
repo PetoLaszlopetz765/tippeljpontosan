@@ -126,7 +126,8 @@ export default function ProfilPage() {
           </div>
         </div>
 
-        {/* Tippek táblázata */}
+
+        {/* Tippek: asztali táblázat + mobil kártyák */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center text-gray-500">Betöltés...</div>
@@ -138,78 +139,134 @@ export default function ProfilPage() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Meccs</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Tippem</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Végeredmény</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Feltett kredit</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Nyeremény</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Pontok</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Státusz</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {bets.map((bet) => (
-                    <tr key={bet.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {bet.event.homeTeam} – {bet.event.awayTeam}
-                          </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            {new Date(bet.event.kickoffTime).toLocaleString("hu-HU")}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-block bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 font-semibold text-blue-900">
-                          {bet.predictedHomeGoals} – {bet.predictedAwayGoals}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {bet.event.finalHomeGoals !== null && bet.event.finalAwayGoals !== null ? (
-                          <span className="inline-block bg-green-50 border border-green-200 rounded-lg px-3 py-1 font-semibold text-green-900">
-                            {bet.event.finalHomeGoals} – {bet.event.finalAwayGoals}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-block bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1 font-semibold text-yellow-900">
-                          {bet.creditSpent}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-block bg-green-50 border border-green-200 rounded-lg px-3 py-1 font-semibold text-green-900 ${bet.winnings > 0 ? "font-bold" : "text-gray-400"}`}>
-                          {bet.winnings}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-block rounded-lg px-3 py-1 font-bold ${
-                          bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
-                          bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
-                          bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
-                          "bg-purple-50 text-purple-900"
-                        }`}>
-                          {bet.pointsAwarded}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
-                          bet.event.status === "CLOSED" ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"
-                        }`}>
-                          {bet.event.status === "CLOSED" ? "Lezárt" : "Nyitott"}
-                        </span>
-                      </td>
+            <>
+              {/* Asztali nézet: táblázat */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Meccs</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Tippem</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Végeredmény</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Feltett kredit</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Nyeremény</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Pontok</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Státusz</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {bets.map((bet) => (
+                      <tr key={bet.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {bet.event.homeTeam} – {bet.event.awayTeam}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {new Date(bet.event.kickoffTime).toLocaleString("hu-HU")}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-block bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 font-semibold text-blue-900">
+                            {bet.predictedHomeGoals} – {bet.predictedAwayGoals}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {bet.event.finalHomeGoals !== null && bet.event.finalAwayGoals !== null ? (
+                            <span className="inline-block bg-green-50 border border-green-200 rounded-lg px-3 py-1 font-semibold text-green-900">
+                              {bet.event.finalHomeGoals} – {bet.event.finalAwayGoals}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-block bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1 font-semibold text-yellow-900">
+                            {bet.creditSpent}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block bg-green-50 border border-green-200 rounded-lg px-3 py-1 font-semibold text-green-900 ${bet.winnings > 0 ? "font-bold" : "text-gray-400"}`}>
+                            {bet.winnings}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block rounded-lg px-3 py-1 font-bold ${
+                            bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
+                            bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
+                            bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
+                            "bg-purple-50 text-purple-900"
+                          }`}>
+                            {bet.pointsAwarded}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
+                            bet.event.status === "CLOSED" ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"
+                          }`}>
+                            {bet.event.status === "CLOSED" ? "Lezárt" : "Nyitott"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobil nézet: kártyák */}
+              <div className="grid gap-3 md:hidden p-3">
+                {bets.map((bet) => (
+                  <div key={bet.id} className="border border-purple-200 rounded-xl p-3 bg-purple-50/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-900">{bet.event.homeTeam} – {bet.event.awayTeam}</span>
+                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                        bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
+                        bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
+                        bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
+                        "bg-purple-50 text-purple-900"
+                      }`}>
+                        {bet.pointsAwarded}p
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
+                        {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
+                      </span>
+                      <span className="text-gray-600">Tipp</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                        {bet.event.finalHomeGoals !== null && bet.event.finalAwayGoals !== null ? `${bet.event.finalHomeGoals}–${bet.event.finalAwayGoals}` : '-'}
+                      </span>
+                      <span className="text-gray-600">Végeredmény</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 font-semibold text-yellow-900">
+                        {bet.creditSpent}
+                      </span>
+                      <span className="text-gray-600">Feltett kredit</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className={`inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold ${bet.winnings > 0 ? "text-green-900 font-bold" : "text-gray-400"}`}>
+                        {bet.winnings}
+                      </span>
+                      <span className="text-gray-600">Nyeremény</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-bold ${
+                        bet.event.status === "CLOSED" ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"
+                      }`}>
+                        {bet.event.status === "CLOSED" ? "Lezárt" : "Nyitott"}
+                      </span>
+                      <span className="text-gray-600">Státusz</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      {new Date(bet.event.kickoffTime).toLocaleString("hu-HU")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
