@@ -154,6 +154,23 @@ export default function VersenyPage() {
     loadData();
   }, []);
 
+  // Következő nyitott esemény napi poolja (halmozott összeg)
+  const nextEvent = [...events]
+    .filter((e) => e.status !== "CLOSED" && e.status !== "LEZÁRT")
+    .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime())[0];
+
+  const nextEventPool = nextEvent?.dailyPool
+    ? (nextEvent.dailyPool.totalDaily || 0) + (nextEvent.dailyPool.carriedFromPrevious || 0)
+    : 0;
+
+  const nextEventLabel = nextEvent
+    ? `${nextEvent.homeTeam} – ${nextEvent.awayTeam}`
+    : "Nincs közelgő esemény";
+
+  const nextEventTime = nextEvent
+    ? new Date(nextEvent.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "";
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 px-4 py-10">
@@ -173,11 +190,14 @@ export default function VersenyPage() {
           <h1 className="text-3xl font-extrabold text-gray-900">⚽ Verseny Állása</h1>
           <p className="text-gray-700 mt-2">Játékosok ranglistája és összes tippek</p>
           <div className="flex flex-col md:flex-row gap-4 mt-4 mb-2 items-center justify-center">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-6 py-3 text-blue-900 font-semibold text-lg text-center">
+              Következő esemény napi poolja: <span className="font-extrabold">{nextEventPool}</span> kredit
+              <div className="text-sm text-blue-800 mt-1">
+                {nextEventLabel}{nextEventTime ? ` • ${nextEventTime}` : ""}
+              </div>
+            </div>
             <div className="bg-purple-50 border border-purple-200 rounded-xl px-6 py-3 text-purple-900 font-semibold text-lg">
               Bajnoki pool: <span className="font-extrabold">{pool.totalChampionship} kredit</span>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-blue-800 text-sm">
-              💡 Napi pool-ok eseményenként követhetők lent
             </div>
           </div>
           {isAdmin && (
