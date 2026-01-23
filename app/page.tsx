@@ -103,12 +103,7 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Footer Info */}
-        <div className="text-center text-gray-700 pt-8">
-          <p className="text-sm text-gray-600">
-            made by <span className="font-bold text-gray-900">@petz765</span>
-          </p>
-        </div>
+        {/* Footer Info removed, handled by layout Footer */}
       </div>
 
       {/* Támogatói banner */}

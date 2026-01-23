@@ -197,9 +197,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-700">
-          made by <span className="font-bold text-gray-900">@petz765</span>
-        </div>
+        {/* Footer Info removed, handled by layout Footer */}
         <div className="mt-10">
           <SupportBanner />
         </div>

@@ -96,7 +96,7 @@ export default function AdminPage() {
           </div>
 
           <div className="text-center text-sm text-gray-700">
-            made by <span className="font-bold text-gray-900">@petz765</span>
+            {/* Footer Info removed, handled by layout Footer */}
           </div>
         </div>
       </div>
@@ -246,7 +246,7 @@ export default function AdminPage() {
         </div>
 
         <div className="text-center text-sm text-gray-700">
-          made by <span className="font-bold text-gray-900">@petz765</span>
+          {/* Footer Info removed, handled by layout Footer */}
         </div>
       </div>
     </div>
