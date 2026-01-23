@@ -1,7 +1,6 @@
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
-const SupportBanner = dynamic(() => import("./components/SupportBanner"), { ssr: false });
+import SupportBanner from "./components/SupportBanner";
 
 export default function Home() {
   return (
