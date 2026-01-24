@@ -110,37 +110,34 @@ export async function POST(req: NextRequest) {
         if (!existingBet) {
           // Új tipp - kredit levonása
           creditSpent += event.creditCost;
-          // Napi pool frissítése: 60% a feltett kreditből
-          const dailyAmount = Math.floor(event.creditCost * 0.6);
-          // Bajnoki pool frissítése: 40% a feltett kreditből
-          const championshipAmount = event.creditCost - dailyAmount;
-
-          // Frissítjük vagy létrehozzuk a dailyPool rekordot
-          const existingPool = await tx.dailyPool.findUnique({ where: { eventId } });
-          if (existingPool) {
-            await tx.dailyPool.update({
-              where: { eventId },
-              data: { totalDaily: { increment: dailyAmount } },
-            });
-          } else {
-            await tx.dailyPool.create({
-              data: {
-                eventId,
-                date: new Date(event.kickoffTime),
-                totalDaily: dailyAmount,
-                carriedFromPrevious: 0,
-                totalDistributed: 0,
-              },
-            });
-          }
-
-          // Bajnoki (globális) pool frissítése vagy létrehozása
-          await tx.creditPool.upsert({
-            where: { id: 1 },
-            update: { totalChampionship: { increment: championshipAmount } },
-            create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
+        }
+        // Minden tippnél (csak új tippnél van kredit levonás, de pool mindig nő)
+        const dailyAmount = Math.floor(event.creditCost * 0.6);
+        const championshipAmount = event.creditCost - dailyAmount;
+        // Frissítjük vagy létrehozzuk a dailyPool rekordot
+        const existingPool = await tx.dailyPool.findUnique({ where: { eventId } });
+        if (existingPool) {
+          await tx.dailyPool.update({
+            where: { eventId },
+            data: { totalDaily: { increment: dailyAmount } },
+          });
+        } else {
+          await tx.dailyPool.create({
+            data: {
+              eventId,
+              date: new Date(event.kickoffTime),
+              totalDaily: dailyAmount,
+              carriedFromPrevious: 0,
+              totalDistributed: 0,
+            },
           });
         }
+        // Bajnoki (globális) pool frissítése vagy létrehozása
+        await tx.creditPool.upsert({
+          where: { id: 1 },
+          update: { totalChampionship: { increment: championshipAmount } },
+          create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
+        });
 
         // UPSERT tipp
         await tx.bet.upsert({
