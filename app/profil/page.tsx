@@ -157,7 +157,7 @@ export default function ProfilPage() {
               <p className="text-3xl font-extrabold text-blue-900">{bets.length}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-              <p className="text-sm text-gray-700 mb-1">Teljesített tippek</p>
+              <p className="text-sm text-gray-700 mb-1">Lezárt tippek</p>
               <p className="text-3xl font-extrabold text-green-900">
                 {bets.filter(b => b.event.status === "CLOSED").length}
               </p>
