@@ -17,7 +17,7 @@ export default function SupportBanner() {
             />
           </div>
           <div className="flex-1 text-center md:text-left py-2 md:py-0">
-            <div className="text-white text-lg md:text-xl font-bold mb-1">Az oldal támogatója a</div>
+            <div className="text-white text-lg md:text-xl font-bold mb-1">Az oldal fő támogatója a</div>
             <div className="text-white text-2xl md:text-3xl font-extrabold tracking-wide mb-1">társasházkezelő központ</div>
             <div className="text-purple-200 text-base md:text-lg">(thkk.hu)</div>
           </div>
