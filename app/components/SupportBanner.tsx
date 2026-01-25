@@ -62,8 +62,8 @@ export default function SupportBanner() {
             />
           </div>
           <div className="flex-1 text-center md:text-left py-2 md:py-0">
-            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Kiemelt AI partner</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">ChatGPT támogatás</div>
+            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Vásárolj megbízható termelőtől!</div>
+            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Válaszd a hazait!</div>
             <div className="text-gray-500 text-base md:text-lg">Kattints a képre a nagyításhoz!</div>
           </div>
         </a>
