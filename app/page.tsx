@@ -48,7 +48,7 @@ export default function Home() {
 
         {/* How it Works */}
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Hogyan működik?</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Hogyan működik a játék?</h2>
           <ol className="space-y-4">
             <li className="flex gap-4">
               <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</span>
