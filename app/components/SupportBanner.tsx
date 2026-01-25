@@ -45,6 +45,29 @@ export default function SupportBanner() {
           </div>
         </a>
       </div>
+      {/* ÚJ: ChatGPT banner */}
+      <div className="w-full flex justify-center mt-6">
+        <a
+          href="https://ibb.co/HDMZzLhy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
+        >
+          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 p-4 md:p-0">
+            <img
+              src="https://i.ibb.co/1fpcqYzN/Chat-GPT-Image-2026-jan-23-15-01-18.png"
+              alt="Chat-GPT-Image-2026-jan-23-15-01-18"
+              className="h-20 md:h-28 object-contain mx-auto"
+              style={{ background: 'rgba(0,0,0,0.01)' }}
+            />
+          </div>
+          <div className="flex-1 text-center md:text-left py-2 md:py-0">
+            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Kiemelt AI partner</div>
+            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">ChatGPT támogatás</div>
+            <div className="text-gray-500 text-base md:text-lg">Kattints a képre a nagyításhoz!</div>
+          </div>
+        </a>
+      </div>
     </>
   );
 }
