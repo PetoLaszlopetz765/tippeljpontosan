@@ -68,6 +68,29 @@ export default function SupportBanner() {
           </div>
         </a>
       </div>
+      {/* ÚJ: Mecseki BADBOYS Gomfoci klub banner */}
+      <div className="w-full flex justify-center mt-6">
+        <a
+          href="https://imgbb.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
+        >
+          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 p-4 md:p-0">
+            <img
+              src="https://i.ibb.co/FbH7yCkF/f85e701f-d4f1-4d1e-9d91-de50511814d5.jpg"
+              alt="Mecseki BADBOYS Gomfoci klub"
+              className="h-20 md:h-28 object-contain mx-auto"
+              style={{ background: 'rgba(0,0,0,0.01)' }}
+            />
+          </div>
+          <div className="flex-1 text-center md:text-left py-2 md:py-0">
+            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Sportklubok támogatása</div>
+            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Mecseki BADBOYS Gomfoci klub</div>
+            <div className="text-gray-500 text-base md:text-lg">Partnerünk a helyi sportban!</div>
+          </div>
+        </a>
+      </div>
     </>
   );
 }
