@@ -69,7 +69,9 @@ export default function TippelesPage() {
   }, []);
 
   function handleChange(eventId: number, field: keyof BetInput, value: string) {
-    const n = value === "" ? 0 : Number(value);
+    // Csak számjegyek engedélyezése
+    const numValue = value.replace(/[^0-9]/g, '');
+    const n = numValue === "" ? 0 : Number(numValue);
     setBets((prev) => ({
       ...prev,
       [eventId]: {
@@ -218,12 +220,15 @@ export default function TippelesPage() {
                   {/* TIPP INPUTOK */}
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
                       inputMode="numeric"
                       placeholder="Hazai"
                       value={hasUserBet ? userBets[event.id]?.predictedHomeGoals : (bets[event.id]?.predictedHomeGoals ?? "")}
                       onChange={(e) => handleChange(event.id, "predictedHomeGoals", e.target.value)}
+                      onFocus={(e) => {
+                        // Kattintáskor kijelölés
+                        if (e.target.value) e.target.select();
+                      }}
                       disabled={!open || hasUserBet}
                       className={`w-20 h-12 rounded-xl border-2 text-center text-lg font-extrabold
                         placeholder:text-gray-400
@@ -236,12 +241,15 @@ export default function TippelesPage() {
                     />
                     <span className="text-gray-900 font-extrabold text-lg">–</span>
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
                       inputMode="numeric"
                       placeholder="Vendég"
                       value={hasUserBet ? userBets[event.id]?.predictedAwayGoals : (bets[event.id]?.predictedAwayGoals ?? "")}
                       onChange={(e) => handleChange(event.id, "predictedAwayGoals", e.target.value)}
+                      onFocus={(e) => {
+                        // Kattintáskor kijelölés
+                        if (e.target.value) e.target.select();
+                      }}
                       disabled={!open || hasUserBet}
                       className={`w-20 h-12 rounded-xl border-2 text-center text-lg font-extrabold
                         placeholder:text-gray-400
