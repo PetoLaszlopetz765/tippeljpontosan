@@ -214,6 +214,9 @@ export default function VersenyPage() {
                 className={`px-8 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition mb-2 ${closeLoading ? "opacity-60 cursor-not-allowed" : ""}`}
                 disabled={closeLoading}
                 onClick={async () => {
+                  if (!window.confirm("⚠️ Biztosan lezárni szeretnéd a versenyt és kiosztani a nyeremények? Ez végleges és visszavonhatatlan!")) {
+                    return;
+                  }
                   setCloseLoading(true);
                   setCloseMsg("");
                   const token = localStorage.getItem("token");

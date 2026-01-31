@@ -582,11 +582,7 @@ export default function EventsAdminPage() {
                       <div className="flex gap-2">
                         {open && (
                           <button
-                            onClick={() => {
-                              if (window.confirm(`Biztosan lezárni szeretnéd a ${e.homeTeam} – ${e.awayTeam} meccsét? Az után nem lehet több tippet leadni erre!`)) {
-                                handleCloseEvent(e.id);
-                              }
-                            }}
+                            onClick={() => handleCloseEvent(e.id)}
                             disabled={closingEventId === e.id}
                             className={`text-sm font-bold px-3 py-1 rounded-lg transition ${
                               closingEventId === e.id
