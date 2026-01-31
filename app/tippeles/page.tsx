@@ -143,8 +143,9 @@ export default function TippelesPage() {
         }
       }, 500);
 
-      // ÚJ: Értesítjük a verseny oldalt, hogy frissítse a tippeket
+      // ÚJ: Értesítjük a verseny oldalt, hogy frissítse a tippeket és az events pool adatokat
       localStorage.setItem("refreshBets", Date.now().toString());
+      localStorage.setItem("refreshEvents", Date.now().toString());
     } else {
       const data = await res.json();
       setMessage(data.message || "❌ Hiba történt a tipp leadásakor.");

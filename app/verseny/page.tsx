@@ -59,7 +59,7 @@ export default function VersenyPage() {
     // eslint-disable-next-line no-console
     console.log('bets:', bets.map(b => b.event.id));
   }
-  // ÚJ: Frissítés trigger figyelése (tippelés után)
+  // ÚJ: Frissítés trigger figyelése (tippelés után) - events és bets
   useEffect(() => {
     const handler = () => {
       if (tab === "bets") {
@@ -76,10 +76,14 @@ export default function VersenyPage() {
             console.log("setBets:", data.bets || []);
             console.log("setUserEventIds:", data.userEventIds || []);
           });
+        // Eventos pool frissítés
+        fetch("/api/events")
+          .then(res => res.ok ? res.json() : [])
+          .then(setEvents);
       }
     };
     window.addEventListener("storage", (e) => {
-      if (e.key === "refreshBets") handler();
+      if (e.key === "refreshBets" || e.key === "refreshEvents") handler();
     });
     return () => {
       window.removeEventListener("storage", handler);
@@ -159,9 +163,13 @@ export default function VersenyPage() {
     .filter((e) => e.finalHomeGoals === null && e.finalAwayGoals === null)
     .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime())[0];
 
+  // Ha nincs következő nyitott esemény, megkeressük az utolsó lezárt eseményt a göngyölített szum-hoz
+  const lastEvent = [...events]
+    .sort((a, b) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime())[0];
+
   const nextEventPool = nextEvent?.dailyPool
     ? (nextEvent.dailyPool.totalDaily || 0) + (nextEvent.dailyPool.carriedFromPrevious || 0)
-    : 0;
+    : (lastEvent?.dailyPool?.totalDaily || 0) + (lastEvent?.dailyPool?.carriedFromPrevious || 0);
 
   const nextEventLabel = nextEvent
     ? `${nextEvent.homeTeam} – ${nextEvent.awayTeam}`
