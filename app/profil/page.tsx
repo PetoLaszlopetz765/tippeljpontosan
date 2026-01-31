@@ -151,6 +151,7 @@ export default function ProfilPage() {
 
         {/* Pontok összegzés */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-xl font-extrabold text-gray-900 mb-4">📊 Statisztikák</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm text-gray-700 mb-1">Összes tipp</p>
@@ -165,6 +166,42 @@ export default function ProfilPage() {
             <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
               <p className="text-sm text-gray-700 mb-1">Összesen pontok</p>
               <p className="text-3xl font-extrabold text-purple-900">{totalPoints}</p>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+              <p className="text-sm text-gray-700 mb-1">Telitalálatok (6 pont)</p>
+              <p className="text-3xl font-extrabold text-yellow-900">
+                {bets.filter(b => b.pointsAwarded === 6).length}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-red-50 rounded-xl border border-red-200">
+              <p className="text-sm text-gray-700 mb-1">Nyertes aránya</p>
+              <p className="text-3xl font-extrabold text-red-900">
+                {bets.length > 0 ? ((bets.filter(b => b.winnings > 0).length / bets.length * 100).toFixed(1)) : "0"}%
+              </p>
+            </div>
+            <div className="text-center p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+              <p className="text-sm text-gray-700 mb-1">Átlagos pontok</p>
+              <p className="text-3xl font-extrabold text-indigo-900">
+                {bets.length > 0 ? (totalPoints / bets.length).toFixed(1) : "0"}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-orange-50 rounded-xl border border-orange-200">
+              <p className="text-sm text-gray-700 mb-1">Összes felhasznált kredit</p>
+              <p className="text-3xl font-extrabold text-orange-900">
+                {bets.reduce((sum: number, b: Bet) => sum + b.creditSpent, 0)}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-teal-50 rounded-xl border border-teal-200">
+              <p className="text-sm text-gray-700 mb-1">Legjobb tipp pontjai</p>
+              <p className="text-3xl font-extrabold text-teal-900">
+                {bets.length > 0 ? Math.max(...bets.map(b => b.pointsAwarded), 0) : "0"}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+              <p className="text-sm text-gray-700 mb-1">Összes nyeremény</p>
+              <p className="text-3xl font-extrabold text-emerald-900">
+                {bets.reduce((sum: number, b: Bet) => sum + b.winnings, 0)}
+              </p>
             </div>
           </div>
         </div>
