@@ -174,9 +174,9 @@ export default function ProfilPage() {
               </p>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-xl border border-red-200">
-              <p className="text-sm text-gray-700 mb-1">Nyertes aránya</p>
+              <p className="text-sm text-gray-700 mb-1">Pontszerző események</p>
               <p className="text-3xl font-extrabold text-red-900">
-                {bets.length > 0 ? ((bets.filter(b => b.winnings > 0).length / bets.length * 100).toFixed(1)) : "0"}%
+                {bets.filter(b => b.pointsAwarded > 0).length}
               </p>
             </div>
             <div className="text-center p-4 bg-indigo-50 rounded-xl border border-indigo-200">
