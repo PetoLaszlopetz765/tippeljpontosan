@@ -86,7 +86,7 @@ export default function SupportBanner() {
           </div>
           <div className="flex-1 text-center md:text-left py-2 md:py-0">
             <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Sportklubok támogatása</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Mecseki BADBOYS Gombfoci club</div>
+            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Mecseki BAD BOYS Gombfoci club</div>
             <div className="text-gray-500 text-base md:text-lg">Partnerünk a helyi sportban!</div>
           </div>
         </a>
