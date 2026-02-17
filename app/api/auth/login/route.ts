@@ -48,7 +48,18 @@ export async function POST(req: NextRequest) {
 
     console.log("✅ Login successful:", { userId: user.id, username: user.username, role: user.role });
 
-    return NextResponse.json({ token, userId: user.id, role: user.role, username: user.username });
+    const response = NextResponse.json({ token, userId: user.id, role: user.role, username: user.username });
+    
+    // Session cookie beállítása (httpOnly, secure, 15 perc expiry)
+    response.cookies.set("sessionToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60, // 15 perc
+      path: "/"
+    });
+
+    return response;
   } catch (err) {
     console.error("❌ Login error:", err);
     return NextResponse.json(

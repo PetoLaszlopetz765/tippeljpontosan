@@ -19,11 +19,15 @@ export function verifyToken(token: string): TokenPayload | null {
 }
 
 export function getTokenFromRequest(req: NextRequest): string | null {
+  // Először a header-ből próbáljuk (localStorage)
   const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7);
   }
-  return authHeader.substring(7);
+  
+  // Majd a session cookie-ból
+  const sessionToken = req.cookies.get("sessionToken")?.value;
+  return sessionToken || null;
 }
 
 export function createToken(userId: number, role: string): string {

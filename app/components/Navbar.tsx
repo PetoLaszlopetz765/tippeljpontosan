@@ -92,6 +92,10 @@ export default function Navbar() {
   }, []);
 
   function handleLogout() {
+    // API logout hívás (session cookie törlése)
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    
+    // Local storage törlése
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("role");
