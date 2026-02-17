@@ -50,13 +50,14 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({ token, userId: user.id, role: user.role, username: user.username });
     
-    // Session cookie beállítása (httpOnly, secure, 15 perc expiry)
+    // Session cookie beállítása (httpOnly, secure, CSAK böngésző futásidejére)
+    // Nincs maxAge, így a bezáráskor lejár
     response.cookies.set("sessionToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 15 * 60, // 15 perc
       path: "/"
+      // Nincs maxAge/expires, így session cookie (bezáráskor lejár)
     });
 
     return response;

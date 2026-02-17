@@ -43,7 +43,7 @@ export default function Navbar() {
     window.addEventListener("storage", updateNavbarState);
 
     // --- Robust inactivity logout (mobile compatible) ---
-    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 perc (session cookie timeout-al sync)
     const LAST_ACTIVITY_KEY = "lastActivity";
     const activityEvents = ["mousemove", "keydown", "mousedown", "touchstart", "touchmove"];
 
@@ -57,16 +57,8 @@ export default function Navbar() {
       if (!localStorage.getItem("token")) return;
       const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || "0", 10);
       if (Date.now() - last > INACTIVITY_TIMEOUT) {
-        // Clear all session data and redirect
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("role");
-        localStorage.removeItem("username");
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
-        setIsLoggedIn(false);
-        setRole(null);
-        setUsername(null);
-        window.location.href = "/login";
+        // Inaktivitás miatt kijelentkezés
+        handleLogout();
       }
     };
 
@@ -78,6 +70,15 @@ export default function Navbar() {
       if (document.visibilityState === "visible") {
         checkInactivity();
       }
+    });
+
+    // Ellenőrzés a böngésző bezárása előtt (localStorage törlés)
+    window.addEventListener("beforeunload", () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("role");
+      localStorage.removeItem("username");
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
     });
 
     // Optionally, check every minute in case of long open tabs
