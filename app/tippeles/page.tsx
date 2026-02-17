@@ -106,7 +106,7 @@ export default function TippelesPage() {
       .filter((x: { eventId: number }) => openIds.has(x.eventId));
 
     if (payload.length === 0) {
-      setMessage("⚠️ Nincs megadott tipp a nyitott eseményekre.");
+      setMessage("⚠️ Minden nyitott eseményre tippeltél már! ⚠️");
       return;
     }
 
@@ -267,7 +267,7 @@ export default function TippelesPage() {
                 {open && hasUserBet && (
                   <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-sm font-semibold text-blue-800">
-                      ✓ Te már tippeltél erre a meccsre. Az input mezők zárolva vannak.
+                      ✓ Te már tippeltél erre a meccsre. Több tipp leadása nem lehetséges.
                     </p>
                   </div>
                 )}
