@@ -72,15 +72,6 @@ export default function Navbar() {
       }
     });
 
-    // Ellenőrzés a böngésző bezárása előtt (localStorage törlés)
-    window.addEventListener("beforeunload", () => {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("role");
-      localStorage.removeItem("username");
-      localStorage.removeItem(LAST_ACTIVITY_KEY);
-    });
-
     // Optionally, check every minute in case of long open tabs
     const interval = setInterval(checkInactivity, 60 * 1000);
 
@@ -101,10 +92,17 @@ export default function Navbar() {
     localStorage.removeItem("userId");
     localStorage.removeItem("role");
     localStorage.removeItem("username");
+    localStorage.removeItem("lastActivity");
+    
+    // State frissítés
     setIsLoggedIn(false);
     setRole(null);
     setUsername(null);
-    router.push("/");
+    
+    // Oldal újratöltése és login-re redirect
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 100);
   }
 
   return (
