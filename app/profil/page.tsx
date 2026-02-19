@@ -46,9 +46,7 @@ export default function ProfilPage() {
     async function loadProfile() {
       try {
         const token = sessionStorage.getItem("token");
-        // Session cookie ellenőrzés (nem httpOnly, de a szerver oldalon úgyis ellenőrizzük)
-        const hasSessionCookie = document.cookie.split(';').some(c => c.trim().startsWith('sessionToken='));
-        if (!token || !hasSessionCookie) {
+        if (!token) {
           window.location.href = "/login";
           return;
         }
@@ -85,8 +83,7 @@ export default function ProfilPage() {
     async function loadBets() {
       try {
         const token = sessionStorage.getItem("token");
-        const hasSessionCookie = document.cookie.split(';').some(c => c.trim().startsWith('sessionToken='));
-        if (!token || !hasSessionCookie) {
+        if (!token) {
           window.location.href = "/login";
           return;
         }
