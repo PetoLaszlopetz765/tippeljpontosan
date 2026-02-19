@@ -45,8 +45,13 @@ export default function ProfilPage() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+        const token = sessionStorage.getItem("token");
+        // Session cookie ellenőrzés (nem httpOnly, de a szerver oldalon úgyis ellenőrizzük)
+        const hasSessionCookie = document.cookie.split(';').some(c => c.trim().startsWith('sessionToken='));
+        if (!token || !hasSessionCookie) {
+          window.location.href = "/login";
+          return;
+        }
         const res = await fetch("/api/profil", { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const data = await res.json();
@@ -79,16 +84,15 @@ export default function ProfilPage() {
   useEffect(() => {
     async function loadBets() {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        const token = sessionStorage.getItem("token");
+        const hasSessionCookie = document.cookie.split(';').some(c => c.trim().startsWith('sessionToken='));
+        if (!token || !hasSessionCookie) {
           window.location.href = "/login";
           return;
         }
-
         const res = await fetch("/api/bets/my-bets-detailed", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (res.ok) {
           const data = await res.json();
           setBets(data);
