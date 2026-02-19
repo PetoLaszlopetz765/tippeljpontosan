@@ -15,8 +15,9 @@ export default function AdminInviteCodesPage() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    // Redirect to login if session cookie is missing
-    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("sessionToken="))) {
+    // Redirect to login if session token is missing
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+    if (!token) {
       window.location.href = "/login";
       return;
     }

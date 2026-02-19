@@ -8,11 +8,7 @@ interface BetWithEventId extends BetInput {
 
 import { useEffect, useMemo, useState } from "react";
 
-// Helper to check if session cookie exists
-function hasSessionCookie() {
-  if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((c) => c.trim().startsWith("sessionToken="));
-}
+
 
 interface Event {
   id: number;
@@ -39,8 +35,9 @@ export default function TippelesPage() {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
-    // Redirect to login if session cookie is missing
-    if (!hasSessionCookie()) {
+    // Redirect to login if session token is missing
+    const token = sessionStorage.getItem("token");
+    if (!token) {
       window.location.href = "/login";
       return;
     }
@@ -52,7 +49,6 @@ export default function TippelesPage() {
       }
     }
     async function loadUserBets() {
-      const token = sessionStorage.getItem("token");
       if (!token) return;
       const res = await fetch("/api/bets/my-bets", {
         headers: { "Authorization": `Bearer ${token}` },
@@ -97,12 +93,7 @@ export default function TippelesPage() {
     e.preventDefault();
     setMessage("");
 
-    // Check session cookie before submit
-    if (!hasSessionCookie()) {
-      setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
-      window.location.href = "/login";
-      return;
-    }
+    // Check session token before submit
     const token = sessionStorage.getItem("token");
     if (!token) {
       setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");

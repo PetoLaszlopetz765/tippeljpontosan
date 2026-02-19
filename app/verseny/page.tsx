@@ -3,11 +3,7 @@
 
 import { useEffect, useState } from "react";
 
-// Helper to check if session cookie exists
-function hasSessionCookie() {
-  if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((c) => c.trim().startsWith("sessionToken="));
-}
+
 import Link from "next/link";
 
 interface User {
@@ -107,8 +103,9 @@ export default function VersenyPage() {
   // Események betöltése mindig mountkor is
 
   useEffect(() => {
-    // Redirect to login if session cookie is missing
-    if (!hasSessionCookie()) {
+    // Redirect to login if session token is missing
+    const token = sessionStorage.getItem("token");
+    if (!token) {
       window.location.href = "/login";
       return;
     }
@@ -122,11 +119,11 @@ export default function VersenyPage() {
   }, []);
   useEffect(() => {
     // Ellenőrizzük, hogy az aktuális user admin-e (tokenből vagy API-ból)
-    if (!hasSessionCookie()) {
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+    if (!token) {
       window.location.href = "/login";
       return;
     }
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
     if (token) {
       fetch("/api/profil", { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.ok ? res.json() : null)
@@ -138,14 +135,13 @@ export default function VersenyPage() {
 
   useEffect(() => {
     async function loadData() {
-      // Redirect to login if session cookie is missing
-      if (!hasSessionCookie()) {
+      // Redirect to login if session token is missing
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+      if (!token) {
         window.location.href = "/login";
         return;
       }
       try {
-        const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
-        console.log("DEBUG: token from sessionStorage (mount):", token);
         const [leaderRes, betsRes] = await Promise.all([
           fetch("/api/leaderboard"),
           fetch("/api/bets/all-bets", {
@@ -158,15 +154,11 @@ export default function VersenyPage() {
         }
         if (betsRes.ok) {
           const data = await betsRes.json();
-          console.log("/api/bets/all-bets response (mount):", data);
           if (Array.isArray(data)) {
             setBets(data);
-            console.log("setBets (mount):", data);
           } else {
             setBets(data.bets || []);
             setUserEventIds(data.userEventIds || []);
-            console.log("setBets (mount):", data.bets || []);
-            console.log("setUserEventIds (mount):", data.userEventIds || []);
           }
         }
       } catch (err) {

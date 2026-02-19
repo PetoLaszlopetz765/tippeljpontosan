@@ -14,8 +14,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Redirect to login if session cookie is missing
-    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("sessionToken="))) {
+    // Redirect to login if session token is missing
+    const savedToken = sessionStorage.getItem("token");
+    if (!savedToken) {
       window.location.href = "/login";
       return;
     }

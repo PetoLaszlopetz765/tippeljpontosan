@@ -47,16 +47,13 @@ export default function EventsAdminPage() {
   useEffect(() => {
     console.log("🔧 EVENTS ADMIN PAGE MOUNTED");
     setIsClient(true);
-    // Redirect to login if session cookie is missing
-    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("sessionToken="))) {
+    // Redirect to login if session token is missing
+    const savedToken = sessionStorage.getItem("token");
+    if (!savedToken) {
       window.location.href = "/login";
       return;
     }
-    const savedToken = sessionStorage.getItem("token");
     setToken(savedToken);
-    if (!savedToken) {
-      setMessage("⚠️  Nem vagy bejelentkezve! Az eredmény feltöltéséhez be kell jelentkezned.");
-    }
   }, []);
 
   async function loadEvents() {
