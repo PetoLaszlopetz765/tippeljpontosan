@@ -8,6 +8,12 @@ interface BetWithEventId extends BetInput {
 
 import { useEffect, useMemo, useState } from "react";
 
+// Helper to check if session cookie exists
+function hasSessionCookie() {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("session="));
+}
+
 interface Event {
   id: number;
   homeTeam: string;
@@ -33,6 +39,11 @@ export default function TippelesPage() {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
+    // Redirect to login if session cookie is missing
+    if (!hasSessionCookie()) {
+      window.location.href = "/login";
+      return;
+    }
     async function loadEvents() {
       const res = await fetch("/api/events", { cache: "no-store" });
       if (res.ok) {
@@ -40,30 +51,25 @@ export default function TippelesPage() {
         setEvents(data);
       }
     }
-    
     async function loadUserBets() {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) return;
-      
       const res = await fetch("/api/bets/my-bets", {
         headers: { "Authorization": `Bearer ${token}` },
         cache: "no-store"
       });
-      
       if (res.ok) {
         const data = await res.json();
-        // Átalakítjuk a tippeket egy map-ba az eventId alapján
-          const betsMap: Record<number, BetInput> = {};
-          data.forEach((bet: BetWithEventId) => {
-            betsMap[bet.eventId] = {
-              predictedHomeGoals: bet.predictedHomeGoals,
-              predictedAwayGoals: bet.predictedAwayGoals,
-            };
+        const betsMap: Record<number, BetInput> = {};
+        data.forEach((bet: BetWithEventId) => {
+          betsMap[bet.eventId] = {
+            predictedHomeGoals: bet.predictedHomeGoals,
+            predictedAwayGoals: bet.predictedAwayGoals,
+          };
         });
         setUserBets(betsMap);
       }
     }
-    
     loadEvents();
     loadUserBets();
   }, []);
@@ -91,7 +97,13 @@ export default function TippelesPage() {
     e.preventDefault();
     setMessage("");
 
-    const token = localStorage.getItem("token");
+    // Check session cookie before submit
+    if (!hasSessionCookie()) {
+      setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
+      window.location.href = "/login";
+      return;
+    }
+    const token = sessionStorage.getItem("token");
     if (!token) {
       setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
       window.location.href = "/login";

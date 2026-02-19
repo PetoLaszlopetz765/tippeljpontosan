@@ -22,7 +22,12 @@ export default function AdminUsersPage() {
   const [passwordEdit, setPasswordEdit] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    // Redirect to login if session cookie is missing
+    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("session="))) {
+      window.location.href = "/login";
+      return;
+    }
+    const storedToken = sessionStorage.getItem("token");
     if (!storedToken) {
       window.location.href = "/login";
       return;

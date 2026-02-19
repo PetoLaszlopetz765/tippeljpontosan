@@ -47,10 +47,13 @@ export default function EventsAdminPage() {
   useEffect(() => {
     console.log("🔧 EVENTS ADMIN PAGE MOUNTED");
     setIsClient(true);
-    const savedToken = localStorage.getItem("token");
-    console.log("📦 Token from localStorage:", savedToken ? "✓ Found (length: " + savedToken.length + ")" : "✗ Not found");
+    // Redirect to login if session cookie is missing
+    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("session="))) {
+      window.location.href = "/login";
+      return;
+    }
+    const savedToken = sessionStorage.getItem("token");
     setToken(savedToken);
-    
     if (!savedToken) {
       setMessage("⚠️  Nem vagy bejelentkezve! Az eredmény feltöltéséhez be kell jelentkezned.");
     }

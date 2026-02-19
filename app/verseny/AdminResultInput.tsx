@@ -1,3 +1,8 @@
+// Helper to check if session cookie exists
+function hasSessionCookie() {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("session="));
+}
 import React, { useState } from "react";
 
 interface Props {
@@ -36,7 +41,14 @@ const AdminResultInput: React.FC<Props> = ({ eventId }) => {
         onClick={async () => {
           setResultLoading(true);
           setResultMsg("");
-          const token = localStorage.getItem("token");
+          // Check session cookie before submit
+          if (!hasSessionCookie()) {
+            setResultMsg("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
+            window.location.href = "/login";
+            setResultLoading(false);
+            return;
+          }
+          const token = sessionStorage.getItem("token");
           try {
             const res = await fetch(`/api/events/${eventId}/result`, {
               method: "POST",

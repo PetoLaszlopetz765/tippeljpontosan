@@ -2,6 +2,12 @@
 
 
 import { useEffect, useState } from "react";
+
+// Helper to check if session cookie exists
+function hasSessionCookie() {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("session="));
+}
 import Link from "next/link";
 
 interface User {
@@ -99,7 +105,13 @@ export default function VersenyPage() {
   }, [tab]);
   // ...existing code...
   // Események betöltése mindig mountkor is
+
   useEffect(() => {
+    // Redirect to login if session cookie is missing
+    if (!hasSessionCookie()) {
+      window.location.href = "/login";
+      return;
+    }
     fetch("/api/events")
       .then(res => res.ok ? res.json() : [])
       .then(setEvents);
@@ -110,6 +122,10 @@ export default function VersenyPage() {
   }, []);
   useEffect(() => {
     // Ellenőrizzük, hogy az aktuális user admin-e (tokenből vagy API-ból)
+    if (!hasSessionCookie()) {
+      window.location.href = "/login";
+      return;
+    }
     const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
     if (token) {
       fetch("/api/profil", { headers: { Authorization: `Bearer ${token}` } })
@@ -122,9 +138,14 @@ export default function VersenyPage() {
 
   useEffect(() => {
     async function loadData() {
+      // Redirect to login if session cookie is missing
+      if (!hasSessionCookie()) {
+        window.location.href = "/login";
+        return;
+      }
       try {
         const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
-        console.log("DEBUG: token from localStorage (mount):", token);
+        console.log("DEBUG: token from sessionStorage (mount):", token);
         const [leaderRes, betsRes] = await Promise.all([
           fetch("/api/leaderboard"),
           fetch("/api/bets/all-bets", {

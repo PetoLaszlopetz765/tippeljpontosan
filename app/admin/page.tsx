@@ -14,7 +14,12 @@ export default function AdminPage() {
 
   useEffect(() => {
     setIsClient(true);
-    const savedToken = localStorage.getItem("token");
+    // Redirect to login if session cookie is missing
+    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("session="))) {
+      window.location.href = "/login";
+      return;
+    }
+    const savedToken = sessionStorage.getItem("token");
     setToken(savedToken);
   }, []);
 

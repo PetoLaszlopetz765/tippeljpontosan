@@ -15,7 +15,12 @@ export default function AdminInviteCodesPage() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    // Redirect to login if session cookie is missing
+    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("session="))) {
+      window.location.href = "/login";
+      return;
+    }
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
     fetch("/api/admin/invite-codes", {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -28,7 +33,12 @@ export default function AdminInviteCodesPage() {
   const handleGenerate = async () => {
     setSuccess("");
     setError("");
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    // Redirect to login if session cookie is missing
+    if (typeof document !== "undefined" && !document.cookie.split(";").some((c) => c.trim().startsWith("session="))) {
+      window.location.href = "/login";
+      return;
+    }
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
     const res = await fetch("/api/admin/invite-codes", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
