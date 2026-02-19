@@ -15,13 +15,12 @@ export default function AdminPage() {
   useEffect(() => {
     setIsClient(true);
     // Redirect to login if session token is missing
-    const savedToken = sessionStorage.getItem("token");
-    if (!savedToken) {
+    const tokenFromStorage = sessionStorage.getItem("token");
+    if (!tokenFromStorage) {
       window.location.href = "/login";
       return;
     }
-    const savedToken = sessionStorage.getItem("token");
-    setToken(savedToken);
+    setToken(tokenFromStorage);
   }, []);
 
   useEffect(() => {
