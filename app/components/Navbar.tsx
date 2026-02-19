@@ -24,24 +24,18 @@ export default function Navbar() {
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    async function updateNavbarState() {
+    function updateNavbarState() {
       const token = localStorage.getItem("token");
       let userRole = localStorage.getItem("role");
       let userName = localStorage.getItem("username");
       userRole = userRole ? userRole.toUpperCase() : null;
-      // Ellenőrizzük, hogy a session cookie létezik-e
-      const cookieExists = document.cookie.split(';').some(c => c.trim().startsWith('sessionToken='));
-      const hasToken = Boolean(token && token !== "null" && token !== "undefined" && cookieExists);
+      const hasToken = Boolean(token && token !== "null" && token !== "undefined");
       setIsLoggedIn(hasToken);
       setUsername(userName);
       if (hasToken && !userRole) {
         setRole("USER");
       } else {
         setRole(userRole);
-      }
-      // Ha nincs session cookie, automatikusan kijelentkeztet
-      if (!cookieExists && token) {
-        handleLogout();
       }
     }
     setIsClient(true);
