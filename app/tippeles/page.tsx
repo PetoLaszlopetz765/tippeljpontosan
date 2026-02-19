@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 // Helper to check if session cookie exists
 function hasSessionCookie() {
   if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((c) => c.trim().startsWith("session="));
+  return document.cookie.split(";").some((c) => c.trim().startsWith("sessionToken="));
 }
 
 interface Event {
