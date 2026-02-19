@@ -7,16 +7,15 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
 export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
-    // Auth check
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // Auth check (session cookie vagy header)
+    import { getTokenFromRequest } from "@/lib/auth";
+    const token = getTokenFromRequest(req);
+    if (!token) {
       return NextResponse.json(
         { message: "Nincs bejelentkezve" },
         { status: 401 }
       );
     }
-
-    const token = authHeader.substring(7);
     let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
@@ -89,16 +88,15 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Auth check
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // Auth check (session cookie vagy header)
+    import { getTokenFromRequest } from "@/lib/auth";
+    const token = getTokenFromRequest(req);
+    if (!token) {
       return NextResponse.json(
         { message: "Nincs bejelentkezve" },
         { status: 401 }
       );
     }
-
-    const token = authHeader.substring(7);
     let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
