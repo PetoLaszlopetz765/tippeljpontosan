@@ -63,7 +63,7 @@ export default function VersenyPage() {
   useEffect(() => {
     const handler = () => {
       if (tab === "bets") {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
         console.log("DEBUG: token from localStorage:", token);
         fetch("/api/bets/all-bets", {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -110,7 +110,7 @@ export default function VersenyPage() {
   }, []);
   useEffect(() => {
     // Ellenőrizzük, hogy az aktuális user admin-e (tokenből vagy API-ból)
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
     if (token) {
       fetch("/api/profil", { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.ok ? res.json() : null)
@@ -123,7 +123,7 @@ export default function VersenyPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
         console.log("DEBUG: token from localStorage (mount):", token);
         const [leaderRes, betsRes] = await Promise.all([
           fetch("/api/leaderboard"),
@@ -219,7 +219,7 @@ export default function VersenyPage() {
                   }
                   setCloseLoading(true);
                   setCloseMsg("");
-                  const token = localStorage.getItem("token");
+                  const token = sessionStorage.getItem("token");
                   try {
                     const res = await fetch("/api/competition/close", {
                       method: "POST",
