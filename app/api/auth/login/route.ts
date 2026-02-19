@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/"
-      // Nincs maxAge/expires, így session cookie (bezáráskor lejár)
+      path: "/",
+      maxAge: 900 // 15 perc inaktivitás után lejár (másodpercben)
     });
 
     return response;
