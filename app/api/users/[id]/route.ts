@@ -9,7 +9,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
     // Auth check (session cookie vagy header)
-    import { getTokenFromRequest } from "@/lib/auth";
     const token = getTokenFromRequest(req);
     if (!token) {
       return NextResponse.json(
@@ -90,7 +89,6 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Auth check (session cookie vagy header)
-    import { getTokenFromRequest } from "@/lib/auth";
     const token = getTokenFromRequest(req);
     if (!token) {
       return NextResponse.json(

@@ -8,7 +8,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    import { getTokenFromRequest } from "@/lib/auth";
     const token = getTokenFromRequest(req);
     if (!token) {
       return NextResponse.json({ message: "Nincs token!" }, { status: 401 });
