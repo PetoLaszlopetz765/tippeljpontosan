@@ -25,9 +25,9 @@ export default function Navbar() {
 
   useEffect(() => {
     function updateNavbarState() {
-      const token = localStorage.getItem("token");
-      let userRole = localStorage.getItem("role");
-      let userName = localStorage.getItem("username");
+      const token = sessionStorage.getItem("token");
+      let userRole = sessionStorage.getItem("role");
+      let userName = sessionStorage.getItem("username");
       userRole = userRole ? userRole.toUpperCase() : null;
       const hasToken = Boolean(token && token !== "null" && token !== "undefined");
       setIsLoggedIn(hasToken);
@@ -48,14 +48,14 @@ export default function Navbar() {
     const activityEvents = ["mousemove", "keydown", "mousedown", "touchstart", "touchmove"];
 
     const setLastActivity = () => {
-      if (localStorage.getItem("token")) {
-        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+      if (sessionStorage.getItem("token")) {
+        sessionStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       }
     };
 
     const checkInactivity = () => {
-      if (!localStorage.getItem("token")) return;
-      const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || "0", 10);
+      if (!sessionStorage.getItem("token")) return;
+      const last = parseInt(sessionStorage.getItem(LAST_ACTIVITY_KEY) || "0", 10);
       if (Date.now() - last > INACTIVITY_TIMEOUT) {
         // Inaktivitás miatt kijelentkezés
         handleLogout();
@@ -87,12 +87,12 @@ export default function Navbar() {
     // API logout hívás (session cookie törlése)
     fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     
-    // Local storage törlése
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("role");
-    localStorage.removeItem("username");
-    localStorage.removeItem("lastActivity");
+    // Session storage törlése
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("userId");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("lastActivity");
     
     // State frissítés
     setIsLoggedIn(false);

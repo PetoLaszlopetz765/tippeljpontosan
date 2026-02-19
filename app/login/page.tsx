@@ -30,11 +30,11 @@ export default function LoginPage() {
       if (res.ok) {
         const data = await res.json();
         // Token és user adatok mentése localStorage-ba
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userId", data.userId);
-        localStorage.setItem("role", data.role);
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("userId", data.userId);
+        sessionStorage.setItem("role", data.role);
         if (data.username) {
-          localStorage.setItem("username", data.username);
+          sessionStorage.setItem("username", data.username);
         }
         setMessage("✅ Sikeres belépés!");
         // Teljes oldalfrissítés, hogy a Navbar is azonnal frissüljön
