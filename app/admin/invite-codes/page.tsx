@@ -16,7 +16,7 @@ export default function AdminInviteCodesPage() {
 
   useEffect(() => {
     // Redirect to login if session token is missing
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
     if (!token) {
       window.location.href = "/login";
       return;
