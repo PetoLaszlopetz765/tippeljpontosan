@@ -41,6 +41,8 @@ interface Bet {
 }
 
 export default function VersenyPage() {
+    // Pagination state for events
+    const [visibleEventsCount, setVisibleEventsCount] = useState(5);
   const [tab, setTab] = useState<"ranking" | "bets">("ranking");
   const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
@@ -422,9 +424,11 @@ export default function VersenyPage() {
               });
               // Események időrendben (legutóbbi elöl)
               const events = Array.from(eventMap.values()).sort((a, b) => new Date(b.event.kickoffTime).getTime() - new Date(a.event.kickoffTime).getTime());
-              return events.map(({ event, bets }) => {
+              const visibleEvents = events.slice(0, visibleEventsCount);
+              return <>
+                {visibleEvents.map(({ event, bets }) => {
                 // Tipp lista és fejléc
-                return (
+                  return (
                   <div key={event.id} className="bg-white rounded-2xl shadow-md border-2 border-purple-300 p-6 mb-4">
                     {/* Esemény fejléc */}
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
@@ -587,8 +591,19 @@ export default function VersenyPage() {
                       );
                     })()}
                   </div>
-                );
-              });
+                  );
+                })}
+                {visibleEventsCount < events.length && (
+                  <div className="flex justify-center mt-6">
+                    <button
+                      className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition"
+                      onClick={() => setVisibleEventsCount(c => c + 10)}
+                    >
+                      További 10 esemény megjelenítése
+                    </button>
+                  </div>
+                )}
+              </>;
             })()}
           </div>
         )}
