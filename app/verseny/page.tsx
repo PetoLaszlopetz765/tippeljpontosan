@@ -411,7 +411,7 @@ export default function VersenyPage() {
           // ÚJ: ÖSSZES TIPPEK TAB - események elkülönítve, csak akkor láthatóak a tippek, ha a user is tippelt az eseményre
           <div className="flex flex-col gap-8">
             {(() => {
-              // Csoportosítás események szerint
+              // Csoportosítás események szerint CSAK azokra, amikre a user tippelt (saját tippjei alapján)
               const eventMap = new Map();
               bets.filter(bet => bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin").forEach(bet => {
                 if (!eventMap.has(bet.event.id)) {
@@ -422,22 +422,15 @@ export default function VersenyPage() {
                 }
                 eventMap.get(bet.event.id).bets.push(bet);
               });
-              // Események időrendben (legutóbbi elöl)
+              // Csak azokat az eseményeket mutatjuk, amelyekre a user tippelt (tehát van legalább egy saját bet az adott event.id-re)
               const events = Array.from(eventMap.values()).sort((a, b) => new Date(b.event.kickoffTime).getTime() - new Date(a.event.kickoffTime).getTime());
-              // Végeredmény nélküli események (mindig látszanak)
+              // Végeredmény nélküli események (mindig látszanak, ha tippelt)
               const noResultEvents = events.filter(({ event }) => event.finalHomeGoals === null || event.finalAwayGoals === null);
               // Végeredménnyel rendelkező események (paginálva)
-              // Csak azokat az eseményeket mutatjuk, amelyekre a user tippelt (userEventIds tartalmazza az event.id-t)
-              const withResultEvents = events.filter(({ event }) =>
-                event.finalHomeGoals !== null &&
-                event.finalAwayGoals !== null &&
-                userEventIds.includes(event.id)
-              );
+              const withResultEvents = events.filter(({ event }) => event.finalHomeGoals !== null && event.finalAwayGoals !== null);
               const visibleWithResultEvents = withResultEvents.slice(0, visibleEventsCount);
-              // Végeredmény nélküli események, csak ha a user tippelt rá
-              const visibleNoResultEvents = noResultEvents.filter(({ event }) => userEventIds.includes(event.id));
               // Kombinált lista: először a végeredmény nélküliek, utána a paginált lezártak
-              const paginatedEvents = [...visibleNoResultEvents, ...visibleWithResultEvents];
+              const paginatedEvents = [...noResultEvents, ...visibleWithResultEvents];
               return <>
                 {paginatedEvents.map(({ event, bets }) => {
                 // Tipp lista és fejléc
