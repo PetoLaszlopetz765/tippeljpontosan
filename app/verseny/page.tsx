@@ -427,10 +427,17 @@ export default function VersenyPage() {
               // Végeredmény nélküli események (mindig látszanak)
               const noResultEvents = events.filter(({ event }) => event.finalHomeGoals === null || event.finalAwayGoals === null);
               // Végeredménnyel rendelkező események (paginálva)
-              const withResultEvents = events.filter(({ event }) => event.finalHomeGoals !== null && event.finalAwayGoals !== null);
+              // Csak azokat az eseményeket mutatjuk, amelyekre a user tippelt (userEventIds tartalmazza az event.id-t)
+              const withResultEvents = events.filter(({ event }) =>
+                event.finalHomeGoals !== null &&
+                event.finalAwayGoals !== null &&
+                userEventIds.includes(event.id)
+              );
               const visibleWithResultEvents = withResultEvents.slice(0, visibleEventsCount);
+              // Végeredmény nélküli események, csak ha a user tippelt rá
+              const visibleNoResultEvents = noResultEvents.filter(({ event }) => userEventIds.includes(event.id));
               // Kombinált lista: először a végeredmény nélküliek, utána a paginált lezártak
-              const paginatedEvents = [...noResultEvents, ...visibleWithResultEvents];
+              const paginatedEvents = [...visibleNoResultEvents, ...visibleWithResultEvents];
               return <>
                 {paginatedEvents.map(({ event, bets }) => {
                 // Tipp lista és fejléc
@@ -500,10 +507,7 @@ export default function VersenyPage() {
                                   <tr key={bet.id}>
                                     <td className="px-4 py-3 text-left font-semibold text-gray-900">{bet.user.username}</td>
                                     <td className="px-4 py-3 text-center">
-                                      <span className="inline-flex items-center gap-1">
-                                        <span className="text-purple-900 text-lg" style={{ verticalAlign: 'middle' }}>❤</span>
-                                        <span>{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</span>
-                                      </span>
+                                      <span className="font-bold text-purple-900 text-lg">{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</span>
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                       <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
