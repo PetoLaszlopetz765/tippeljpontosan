@@ -486,6 +486,23 @@ export default function VersenyPage() {
                             <tbody className="divide-y divide-gray-200">
                               {bets.map((bet: any) => {
                                 let wonCredit = 0;
+                                // Calculate wonCredit for winners
+                                if (
+                                  event.finalHomeGoals !== null &&
+                                  bet.pointsAwarded === 6 &&
+                                  winCount > 0 &&
+                                  bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
+                                  totalDistributed > 0
+                                ) {
+                                  wonCredit = Math.floor(totalDistributed / winCount);
+                                }
+                                return (
+                                  <tr key={bet.id}>
+                                    <td className="px-4 py-3 text-left font-semibold text-gray-900">{bet.user.username}</td>
+                                    <td className="px-4 py-3 text-center">{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                                        bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
                                         bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
                                         bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                                         "bg-purple-50 text-purple-900"
