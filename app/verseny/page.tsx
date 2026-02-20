@@ -499,7 +499,12 @@ export default function VersenyPage() {
                                 return (
                                   <tr key={bet.id}>
                                     <td className="px-4 py-3 text-left font-semibold text-gray-900">{bet.user.username}</td>
-                                    <td className="px-4 py-3 text-center">{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="text-purple-900 text-lg" style={{ verticalAlign: 'middle' }}>❤</span>
+                                        <span>{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</span>
+                                      </span>
+                                    </td>
                                     <td className="px-4 py-3 text-center">
                                       <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
                                         bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
