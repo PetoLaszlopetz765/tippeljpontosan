@@ -486,28 +486,6 @@ export default function VersenyPage() {
                             <tbody className="divide-y divide-gray-200">
                               {bets.map((bet: any) => {
                                 let wonCredit = 0;
-                                )}
-                                {visibleEventsCount < withResultEvents.length && (
-                                  <div className="flex justify-center mt-6">
-                                    <button
-                                      className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition"
-                                      onClick={() => setVisibleEventsCount(c => c + 10)}
-                                    >
-                                      További 10 esemény megjelenítése
-                                    </button>
-                                  </div>
-                                )}
-                              </>;
-                                      <span className="font-semibold text-gray-900">{bet.user.username}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
-                                        {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className={`inline-block rounded px-2 py-1 font-bold ${
-                                        bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
                                         bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
                                         bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                                         "bg-purple-50 text-purple-900"
