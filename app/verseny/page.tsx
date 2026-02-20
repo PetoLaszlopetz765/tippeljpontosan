@@ -424,9 +424,15 @@ export default function VersenyPage() {
               });
               // Események időrendben (legutóbbi elöl)
               const events = Array.from(eventMap.values()).sort((a, b) => new Date(b.event.kickoffTime).getTime() - new Date(a.event.kickoffTime).getTime());
-              const visibleEvents = events.slice(0, visibleEventsCount);
+              // Végeredmény nélküli események (mindig látszanak)
+              const noResultEvents = events.filter(({ event }) => event.finalHomeGoals === null || event.finalAwayGoals === null);
+              // Végeredménnyel rendelkező események (paginálva)
+              const withResultEvents = events.filter(({ event }) => event.finalHomeGoals !== null && event.finalAwayGoals !== null);
+              const visibleWithResultEvents = withResultEvents.slice(0, visibleEventsCount);
+              // Kombinált lista: először a végeredmény nélküliek, utána a paginált lezártak
+              const paginatedEvents = [...noResultEvents, ...visibleWithResultEvents];
               return <>
-                {visibleEvents.map(({ event, bets }) => {
+                {paginatedEvents.map(({ event, bets }) => {
                 // Tipp lista és fejléc
                   return (
                   <div key={event.id} className="bg-white rounded-2xl shadow-md border-2 border-purple-300 p-6 mb-4">
@@ -480,18 +486,18 @@ export default function VersenyPage() {
                             <tbody className="divide-y divide-gray-200">
                               {bets.map((bet: any) => {
                                 let wonCredit = 0;
-                                if (
-                                  event.finalHomeGoals !== null &&
-                                  bet.pointsAwarded === 6 &&
-                                  winCount > 0 &&
-                                  bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
-                                  totalDistributed > 0
-                                ) {
-                                  wonCredit = Math.floor(totalDistributed / winCount);
-                                }
-                                return (
-                                  <tr key={bet.id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3">
+                                )}
+                                {visibleEventsCount < withResultEvents.length && (
+                                  <div className="flex justify-center mt-6">
+                                    <button
+                                      className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition"
+                                      onClick={() => setVisibleEventsCount(c => c + 10)}
+                                    >
+                                      További 10 esemény megjelenítése
+                                    </button>
+                                  </div>
+                                )}
+                              </>;
                                       <span className="font-semibold text-gray-900">{bet.user.username}</span>
                                     </td>
                                     <td className="px-4 py-3 text-center">
