@@ -36,12 +36,39 @@ export async function POST(req: NextRequest) {
 
     const { homeTeam, awayTeam, kickoffTime, status, creditCost } = await req.json();
 
-    // Közvetlenül mentjük az admin által kiválasztott időpontot, időzóna konverzió nélkül
+    // A kickoffTime stringet (pl. '2026-02-22T18:45') Europe/Budapest időzónaként értelmezzük, majd UTC-re konvertáljuk
+    function parseBudapestToUTC(localDateTimeStr) {
+      // Feltételezzük, hogy a string formátuma 'YYYY-MM-DDTHH:mm'
+      const [datePart, timePart] = localDateTimeStr.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      // Budapest időzóna offset (télen +1, nyáron +2) - ezt a DateTimeFormat-ból lekérjük
+      const dtf = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Budapest', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      // Budapest időben létrehozott dátum
+      const asIfUTC = new Date(Date.UTC(year, month - 1, day, hour, minute));
+      // A Budapest időhöz tartozó UTC offsetet lekérjük
+      const parts = dtf.formatToParts(asIfUTC);
+      // A formatToParts visszaadja a helyi időt, de a Date objektum UTC-ben van, ezért a különbséget ki kell számolni
+      // Budapest idő: parts-ból összerakjuk a helyi időt
+      const budapestHour = Number(parts.find(p => p.type === 'hour').value);
+      const budapestMinute = Number(parts.find(p => p.type === 'minute').value);
+      // Ha a Date UTC órája nem egyezik a Budapest órával, akkor van offset
+      const utcHour = asIfUTC.getUTCHours();
+      const utcMinute = asIfUTC.getUTCMinutes();
+      // Offset percben
+      const offsetMinutes = ((budapestHour - utcHour) * 60) + (budapestMinute - utcMinute);
+      // A helyes UTC idő: asIfUTC - offset
+      const utcDate = new Date(asIfUTC.getTime() - offsetMinutes * 60000);
+      return utcDate;
+    }
+
+    const kickoffUTC = parseBudapestToUTC(kickoffTime);
+
     const event = await prisma.event.create({
       data: {
         homeTeam,
         awayTeam,
-        kickoffTime: new Date(kickoffTime),
+        kickoffTime: kickoffUTC,
         status: status || "OPEN",
         creditCost: creditCost || 100,
       },
