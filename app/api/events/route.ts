@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
       const parts = dtf.formatToParts(asIfUTC);
       // A formatToParts visszaadja a helyi időt, de a Date objektum UTC-ben van, ezért a különbséget ki kell számolni
       // Budapest idő: parts-ból összerakjuk a helyi időt
-      const budapestHour = Number(parts.find(p => p.type === 'hour').value);
-      const budapestMinute = Number(parts.find(p => p.type === 'minute').value);
+      const budapestHour = Number((parts.find(p => p.type === 'hour')?.value ?? 0));
+      const budapestMinute = Number((parts.find(p => p.type === 'minute')?.value ?? 0));
       // Ha a Date UTC órája nem egyezik a Budapest órával, akkor van offset
       const utcHour = asIfUTC.getUTCHours();
       const utcMinute = asIfUTC.getUTCMinutes();
