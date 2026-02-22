@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const { homeTeam, awayTeam, kickoffTime, status, creditCost } = await req.json();
 
     // A kickoffTime stringet (pl. '2026-02-22T18:45') Europe/Budapest időzónaként értelmezzük, majd UTC-re konvertáljuk
-    function parseBudapestToUTC(localDateTimeStr) {
+    function parseBudapestToUTC(localDateTimeStr: string) {
       // Feltételezzük, hogy a string formátuma 'YYYY-MM-DDTHH:mm'
       const [datePart, timePart] = localDateTimeStr.split('T');
       const [year, month, day] = datePart.split('-').map(Number);
