@@ -214,7 +214,7 @@ export default function TippelesPage() {
                     <div className="mt-2 flex items-center gap-2 text-sm">
                       <span className="text-gray-700">Kezdés:</span>
                       <span className="font-semibold text-gray-900">
-                        {new Date(event.kickoffTime).toLocaleString("hu-HU")}
+                        {new Date(event.kickoffTime).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}
                       </span>
                       <span className="ml-4 text-gray-700">Tippelés díja:</span>
                       <span className="font-semibold text-green-800">{event.creditCost} kredit</span>

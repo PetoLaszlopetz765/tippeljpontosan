@@ -191,7 +191,7 @@ export default function VersenyPage() {
     : "Nincs közelgő esemény";
 
   const nextEventTime = nextEvent
-    ? new Date(nextEvent.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    ? new Date(nextEvent.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })
     : "";
 
   if (error) {
@@ -440,7 +440,7 @@ export default function VersenyPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
                       <div>
                         <div className="text-lg font-bold text-purple-900">{event.homeTeam} – {event.awayTeam}</div>
-                        <div className="text-sm text-gray-600">{new Date(event.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                        <div className="text-sm text-gray-600">{new Date(event.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })}</div>
                       </div>
                       <div className="flex flex-col md:items-end gap-1">
                         <span className="text-sm text-gray-700">Feltett kredit: <span className="font-semibold text-blue-900">{event.creditCost}</span></span>

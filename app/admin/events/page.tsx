@@ -99,25 +99,14 @@ export default function EventsAdminPage() {
     }
 
     try {
-
-      // Convert kickoffTime from local input to Europe/Budapest (UTC)
-      let kickoffTimeToSend = kickoffTime;
-      if (kickoffTime) {
-        // Parse as local time, then convert to Europe/Budapest UTC string
-        const localDate = new Date(kickoffTime);
-        // Get Budapest offset in minutes
-        const budapestOffset = -new Date(localDate.toLocaleString('en-US', { timeZone: 'Europe/Budapest' })).getTimezoneOffset();
-        // Adjust to Budapest time
-        const budapestDate = new Date(localDate.getTime() + (budapestOffset - localDate.getTimezoneOffset()) * 60000);
-        kickoffTimeToSend = budapestDate.toISOString();
-      }
+      // Do NOT convert timezone, just send the local time string as entered
       const res = await fetch("/api/events", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ homeTeam, awayTeam, kickoffTime: kickoffTimeToSend, creditCost: parseInt(creditCost) || 100 }),
+        body: JSON.stringify({ homeTeam, awayTeam, kickoffTime, creditCost: parseInt(creditCost) || 100 }),
       });
 
       if (res.ok) {
