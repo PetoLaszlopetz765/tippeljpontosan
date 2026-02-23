@@ -352,8 +352,8 @@ export default function ProfilPage() {
         </div>
 
         <div className="mt-8 text-center">
-          <Link href="/verseny" className="inline-block px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700">
-            ⚽ Verseny állása
+          <Link href="/ranglista" className="inline-block px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700">
+            ⚽ Ranglista
           </Link>
         </div>
       </div>

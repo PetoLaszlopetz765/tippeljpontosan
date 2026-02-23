@@ -134,8 +134,11 @@ export default function Navbar() {
               <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition font-semibold">
                 Szabályzat
               </Link>
-              <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition font-semibold">
-                🏆 Verseny állása
+              <Link href="/ranglista" className="text-gray-700 hover:text-purple-600 transition font-semibold">
+                🏆 Ranglista
+              </Link>
+              <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition font-semibold">
+                📋 Összes tippek
               </Link>
               <button
                 onClick={handleLogout}
@@ -161,8 +164,11 @@ export default function Navbar() {
               <Link href="/profil" className="text-gray-700 hover:text-purple-600 transition">
                 Profilom
               </Link>
-              <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition">
-                Verseny
+              <Link href="/ranglista" className="text-gray-700 hover:text-purple-600 transition">
+                Ranglista
+              </Link>
+              <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition">
+                Összes tippek
               </Link>
               <button
                 onClick={handleLogout}
@@ -212,8 +218,11 @@ export default function Navbar() {
                 <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   Szabályzat
                 </Link>
-                <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
-                  🏆 Verseny állása
+                <Link href="/ranglista" className="text-gray-700 hover:text-purple-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  🏆 Ranglista
+                </Link>
+                <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  📋 Összes tippek
                 </Link>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
@@ -239,8 +248,11 @@ export default function Navbar() {
                 <Link href="/profil" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Profilom
                 </Link>
-                <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
-                  Verseny
+                <Link href="/ranglista" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Ranglista
+                </Link>
+                <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Összes tippek
                 </Link>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
