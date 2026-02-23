@@ -126,7 +126,7 @@ export default function Navbar() {
                 ⚙️ Admin Panel
               </Link>
               <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition font-semibold">
-                Következő események
+                Mai események
               </Link>
               <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition font-semibold">
                 💬 Chat
@@ -138,7 +138,7 @@ export default function Navbar() {
                 🏆 Ranglista
               </Link>
               <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition font-semibold">
-                📋 Összes tippek
+                📋 Minden tipp
               </Link>
               <button
                 onClick={handleLogout}
@@ -153,7 +153,7 @@ export default function Navbar() {
                 Tippelés
               </Link>
               <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition">
-                Következő események
+                Mai események
               </Link>
               <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition">
                 Chat
@@ -168,7 +168,7 @@ export default function Navbar() {
                 Ranglista
               </Link>
               <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition">
-                Összes tippek
+                Minden tipp
               </Link>
               <button
                 onClick={handleLogout}
@@ -210,7 +210,7 @@ export default function Navbar() {
                   ⚙️ Admin Panel
                 </Link>
                 <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
-                  Következő események
+                  Mai események
                 </Link>
                 <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   💬 Chat
@@ -222,7 +222,7 @@ export default function Navbar() {
                   🏆 Ranglista
                 </Link>
                 <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
-                  📋 Összes tippek
+                  📋 Minden tipp
                 </Link>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
@@ -237,7 +237,7 @@ export default function Navbar() {
                   Tippelés
                 </Link>
                 <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
-                  Következő események
+                  Mai események
                 </Link>
                 <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Chat
@@ -252,7 +252,7 @@ export default function Navbar() {
                   Ranglista
                 </Link>
                 <Link href="/osszes-tippek" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
-                  Összes tippek
+                  Minden tipp
                 </Link>
                 <button
                   onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
