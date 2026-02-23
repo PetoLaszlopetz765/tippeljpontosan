@@ -54,31 +54,18 @@ export default function VersenyPage() {
   const [closeLoading, setCloseLoading] = useState(false);
   const [pool, setPool] = useState<{ totalDaily: number, totalChampionship: number }>({ totalDaily: 0, totalChampionship: 0 });
   const [events, setEvents] = useState<any[]>([]);
-  // DEBUG: Log state when rendering bets tab
-  if (typeof window !== "undefined" && tab === "bets") {
-    // eslint-disable-next-line no-console
-    console.log('userEventIds:', userEventIds);
-    // eslint-disable-next-line no-console
-    console.log('events:', events.map(e => e.id));
-    // eslint-disable-next-line no-console
-    console.log('bets:', bets.map(b => b.event.id));
-  }
   // ÚJ: Frissítés trigger figyelése (tippelés után) - events és bets
   useEffect(() => {
     const handler = () => {
       if (tab === "bets") {
         const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
-        console.log("DEBUG: token from localStorage:", token);
         fetch("/api/bets/all-bets", {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         })
           .then(res => res.ok ? res.json() : { bets: [], userEventIds: [] })
           .then(data => {
-            console.log("/api/bets/all-bets response:", data);
             setBets(data.bets || []);
             setUserEventIds(data.userEventIds || []);
-            console.log("setBets:", data.bets || []);
-            console.log("setUserEventIds:", data.userEventIds || []);
           });
         // Eventos pool frissítés
         fetch("/api/events")
@@ -86,11 +73,17 @@ export default function VersenyPage() {
           .then(setEvents);
       }
     };
-    window.addEventListener("storage", (e) => {
-      if (e.key === "refreshBets" || e.key === "refreshEvents") handler();
-    });
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "refreshBets" || e.key === "refreshEvents") {
+        handler();
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+
     return () => {
-      window.removeEventListener("storage", handler);
+      window.removeEventListener("storage", onStorage);
     };
   }, [tab]);
   // Események frissítése tab váltáskor is, hogy mindig naprakész legyen
@@ -413,7 +406,16 @@ export default function VersenyPage() {
             {(() => {
               // Csoportosítás események szerint CSAK azokra, amikre a user tippelt (saját tippjei alapján)
               const eventMap = new Map();
-              bets.filter(bet => bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin").forEach(bet => {
+              const allowedEventIds = new Set(userEventIds);
+              bets
+                .filter(
+                  (bet) =>
+                    bet.user &&
+                    bet.user.username &&
+                    bet.user.username.toLowerCase() !== "admin" &&
+                    allowedEventIds.has(bet.event.id)
+                )
+                .forEach((bet) => {
                 if (!eventMap.has(bet.event.id)) {
                   eventMap.set(bet.event.id, {
                     event: bet.event,
@@ -447,7 +449,6 @@ export default function VersenyPage() {
                         <span className="text-sm text-gray-700">Végeredmény: {event.finalHomeGoals !== null ? <span className="font-semibold text-green-900">{event.finalHomeGoals}–{event.finalAwayGoals}</span> : <span className="text-gray-400">-</span>}</span>
                         {(() => {
                           const eventDailyPool = (event as any).dailyPool;
-                          console.log(`Header - Event ${event.id}: dailyPool =`, eventDailyPool);
                           if (eventDailyPool) {
                             const poolTotal = eventDailyPool.totalDaily + eventDailyPool.carriedFromPrevious;
                             const distributed = eventDailyPool.totalDistributed || 0;
@@ -468,7 +469,6 @@ export default function VersenyPage() {
                       const winCount = winners.length;
                       // Az esemény DailyPool-ját az event objektumból kapjuk (ha van)
                       const eventDailyPool = (event as any).dailyPool;
-                      console.log(`Event ${event.id} (${event.homeTeam} - ${event.awayTeam}): dailyPool =`, eventDailyPool);
                       const totalDistributed = eventDailyPool?.totalDistributed || 0;
 
                       // Asztali nézet: táblázat

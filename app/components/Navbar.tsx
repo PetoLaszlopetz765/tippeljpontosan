@@ -125,8 +125,14 @@ export default function Navbar() {
               <Link href="/admin" className="text-gray-700 hover:text-blue-600 transition font-semibold">
                 ⚙️ Admin Panel
               </Link>
+              <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition font-semibold">
+                Következő események
+              </Link>
               <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition font-semibold">
                 💬 Chat
+              </Link>
+              <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition font-semibold">
+                Szabályzat
               </Link>
               <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition font-semibold">
                 🏆 Verseny állása
@@ -143,8 +149,14 @@ export default function Navbar() {
               <Link href="/tippeles" className="text-gray-700 hover:text-blue-600 transition">
                 Tippelés
               </Link>
+              <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition">
+                Következő események
+              </Link>
               <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition">
                 Chat
+              </Link>
+              <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition">
+                Szabályzat
               </Link>
               <Link href="/profil" className="text-gray-700 hover:text-purple-600 transition">
                 Profilom
@@ -159,7 +171,16 @@ export default function Navbar() {
                 Kijelentkezés
               </button>
             </>
-          ) : null}
+          ) : (
+            <>
+              <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition">
+                Szabályzat
+              </Link>
+              <Link href="/login" className="text-gray-700 hover:text-blue-600 transition">
+                Bejelentkezés
+              </Link>
+            </>
+          )}
         </div>
         {/* Hamburger icon for mobile */}
         <div className="md:hidden flex items-center">
@@ -182,8 +203,14 @@ export default function Navbar() {
                 <Link href="/admin" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   ⚙️ Admin Panel
                 </Link>
+                <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  Következő események
+                </Link>
                 <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   💬 Chat
+                </Link>
+                <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  Szabályzat
                 </Link>
                 <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   🏆 Verseny állása
@@ -200,8 +227,14 @@ export default function Navbar() {
                 <Link href="/tippeles" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Tippelés
                 </Link>
+                <Link href="/esemenyek" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Következő események
+                </Link>
                 <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Chat
+                </Link>
+                <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Szabályzat
                 </Link>
                 <Link href="/profil" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Profilom
@@ -216,7 +249,16 @@ export default function Navbar() {
                   Kijelentkezés
                 </button>
               </>
-            ) : null}
+            ) : (
+              <>
+                <Link href="/szabalyzat" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Szabályzat
+                </Link>
+                <Link href="/login" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Bejelentkezés
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
