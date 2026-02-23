@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+type UserBet = {
+  eventId: number;
+  predictedHomeGoals: number;
+  predictedAwayGoals: number;
+};
+
 type EventItem = {
   id: number;
   homeTeam: string;
@@ -20,6 +26,7 @@ type EventItem = {
 
 export default function EsemenyekPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [myBets, setMyBets] = useState<UserBet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -30,16 +37,28 @@ export default function EsemenyekPage() {
       return;
     }
 
-    async function loadEvents() {
+    async function loadData() {
       try {
-        const res = await fetch("/api/events", { cache: "no-store" });
-        if (!res.ok) {
+        const [eventsRes, myBetsRes] = await Promise.all([
+          fetch("/api/events", { cache: "no-store" }),
+          fetch("/api/bets/my-bets", {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+        ]);
+
+        if (!eventsRes.ok) {
           setError("Nem sikerült betölteni az eseményeket.");
           return;
         }
 
-        const data = (await res.json()) as EventItem[];
-        setEvents(data || []);
+        const eventsData = (await eventsRes.json()) as EventItem[];
+        setEvents(eventsData || []);
+
+        if (myBetsRes.ok) {
+          const myBetsData = (await myBetsRes.json()) as UserBet[];
+          setMyBets(myBetsData || []);
+        }
       } catch {
         setError("Hálózati hiba történt.");
       } finally {
@@ -47,7 +66,7 @@ export default function EsemenyekPage() {
       }
     }
 
-    loadEvents();
+    loadData();
   }, []);
 
   const nextTwoEvents = useMemo(() => {
@@ -75,6 +94,10 @@ export default function EsemenyekPage() {
     return fallback;
   }, [events]);
 
+  const myBetsByEventId = useMemo(() => {
+    return new Map(myBets.map((bet) => [bet.eventId, bet]));
+  }, [myBets]);
+
   return (
     <div className="min-h-screen bg-gray-100 px-3 sm:px-4 py-6 sm:py-10">
       <div className="max-w-3xl mx-auto">
@@ -99,6 +122,7 @@ export default function EsemenyekPage() {
           <div className="grid gap-4 sm:gap-5">
             {nextTwoEvents.map((event) => {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
+              const myBet = myBetsByEventId.get(event.id);
 
               return (
                 <div key={event.id} className="bg-white rounded-2xl border border-blue-200 shadow-sm p-4 sm:p-5">
@@ -134,6 +158,17 @@ export default function EsemenyekPage() {
                       <p className="text-gray-600 text-xs mb-1">Napi pool</p>
                       <p className="font-semibold text-gray-900">{poolTotal} kredit</p>
                     </div>
+                  </div>
+
+                  <div className="mt-3 rounded-xl border border-purple-200 bg-purple-50 p-3">
+                    <p className="text-xs text-purple-700 mb-1">Saját tipped</p>
+                    {myBet ? (
+                      <p className="font-bold text-purple-900 text-lg">
+                        {myBet.predictedHomeGoals} – {myBet.predictedAwayGoals}
+                      </p>
+                    ) : (
+                      <p className="font-semibold text-gray-700">Erre az eseményre még nem tippeltél.</p>
+                    )}
                   </div>
                 </div>
               );
