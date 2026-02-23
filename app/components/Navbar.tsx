@@ -125,6 +125,9 @@ export default function Navbar() {
               <Link href="/admin" className="text-gray-700 hover:text-blue-600 transition font-semibold">
                 ⚙️ Admin Panel
               </Link>
+              <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition font-semibold">
+                💬 Chat
+              </Link>
               <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition font-semibold">
                 🏆 Verseny állása
               </Link>
@@ -139,6 +142,9 @@ export default function Navbar() {
             <>
               <Link href="/tippeles" className="text-gray-700 hover:text-blue-600 transition">
                 Tippelés
+              </Link>
+              <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition">
+                Chat
               </Link>
               <Link href="/profil" className="text-gray-700 hover:text-purple-600 transition">
                 Profilom
@@ -176,6 +182,9 @@ export default function Navbar() {
                 <Link href="/admin" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   ⚙️ Admin Panel
                 </Link>
+                <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  💬 Chat
+                </Link>
                 <Link href="/verseny" className="text-gray-700 hover:text-purple-600 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   🏆 Verseny állása
                 </Link>
@@ -190,6 +199,9 @@ export default function Navbar() {
               <>
                 <Link href="/tippeles" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Tippelés
+                </Link>
+                <Link href="/chat" className="text-gray-700 hover:text-blue-600 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Chat
                 </Link>
                 <Link href="/profil" className="text-gray-700 hover:text-purple-600 transition" onClick={() => setMobileMenuOpen(false)}>
                   Profilom
