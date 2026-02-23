@@ -69,29 +69,22 @@ export default function EsemenyekPage() {
     loadData();
   }, []);
 
-  const nextTwoEvents = useMemo(() => {
+  const todayEvents = useMemo(() => {
     const now = new Date();
 
-    const upcoming = events
+    const isSameSystemDay = (date: Date) =>
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+
+    return events
       .filter(
         (event) =>
           event.finalHomeGoals === null &&
           event.finalAwayGoals === null &&
-          new Date(event.kickoffTime) >= now
+          isSameSystemDay(new Date(event.kickoffTime))
       )
-      .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime())
-      .slice(0, 2);
-
-    if (upcoming.length === 2) {
-      return upcoming;
-    }
-
-    const fallback = events
-      .filter((event) => event.finalHomeGoals === null && event.finalAwayGoals === null)
-      .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime())
-      .slice(0, 2);
-
-    return fallback;
+      .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime());
   }, [events]);
 
   const myBetsByEventId = useMemo(() => {
@@ -102,8 +95,8 @@ export default function EsemenyekPage() {
     <div className="min-h-screen bg-gray-100 px-3 sm:px-4 py-6 sm:py-10">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">📅 Következő események</h1>
-          <p className="text-gray-700 mt-2 text-sm sm:text-base">Az aktuális következő 2 esemény gyors nézetben.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">📅 Mai események</h1>
+          <p className="text-gray-700 mt-2 text-sm sm:text-base">Csak a rendszeridő szerinti mai nap eseményei.</p>
         </div>
 
         {loading ? (
@@ -114,13 +107,13 @@ export default function EsemenyekPage() {
           <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-6 text-center text-red-700 font-semibold">
             {error}
           </div>
-        ) : nextTwoEvents.length === 0 ? (
+        ) : todayEvents.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center text-gray-700">
-            Jelenleg nincs közelgő esemény.
+            Ma nincs megjeleníthető esemény.
           </div>
         ) : (
           <div className="grid gap-4 sm:gap-5">
-            {nextTwoEvents.map((event) => {
+            {todayEvents.map((event) => {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
 
