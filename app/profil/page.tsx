@@ -67,10 +67,19 @@ export default function ProfilPage() {
         const res = await fetch("/api/leaderboard");
         if (res.ok) {
           const data: LeaderboardUser[] = await res.json();
-          setLeaderboard(data);
+          const sorted = data
+            .filter((u) => u.role !== "ADMIN")
+            .slice()
+            .sort((a, b) => {
+              if (b.points !== a.points) return b.points - a.points;
+              if (b.credits !== a.credits) return b.credits - a.credits;
+              if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+              return a.username.localeCompare(b.username);
+            });
+
+          setLeaderboard(sorted);
           if (profile) {
-            const filtered = data.filter(u => u.role !== "ADMIN");
-            const idx = filtered.findIndex(u => u.username === profile.username);
+            const idx = sorted.findIndex(u => u.username === profile.username);
             setUserRank(idx !== -1 ? idx + 1 : null);
           }
         }
