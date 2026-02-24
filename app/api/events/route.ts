@@ -93,23 +93,19 @@ export async function GET() {
       orderBy: { kickoffTime: "asc" },
     });
 
-    // Dinamikusan átszámoljuk a carriedFromPrevious értékeket rekurzívan, hogy a teljes halmozódás átjöjjön
-    // Feltételezzük, hogy events időrendben vannak rendezve kickoffTime szerint (orderBy: asc)
-    let lastCarried = 0;
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
+    // Dinamikus, determinisztikus göngyölítés:
+    // carriedFromPrevious mindig az előző, KI NEM osztott összeg legyen.
+    let runningCarry = 0;
+    for (const event of events) {
       if (!event.dailyPool) continue;
 
-      // Ha az előző esemény poolja nem lett szétosztva, hozzáadjuk a teljes halmozódást
-      if (lastCarried > 0) {
-        event.dailyPool.carriedFromPrevious = lastCarried;
-      }
+      const currentDaily = event.dailyPool.totalDaily || 0;
+      event.dailyPool.carriedFromPrevious = runningCarry;
 
-      // Ha az aktuális esemény poolja nem lett szétosztva, tovább halmozunk
       if (event.dailyPool.totalDistributed === 0) {
-        lastCarried = (event.dailyPool.totalDaily || 0) + (event.dailyPool.carriedFromPrevious || 0);
+        runningCarry = runningCarry + currentDaily;
       } else {
-        lastCarried = 0;
+        runningCarry = 0;
       }
     }
 

@@ -60,8 +60,8 @@ export async function PUT(
       include: { dailyPool: true },
     });
 
-    // Mindig az előző esemény teljes maradéka (totalDaily + carriedFromPrevious) átjön, ha van előző pool
-    const carriedFromPrevious = previousEvent?.dailyPool
+    // Csak akkor göngyölünk, ha az előző esemény poolja NEM lett szétosztva
+    const carriedFromPrevious = previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0
       ? (previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious)
       : 0;
 

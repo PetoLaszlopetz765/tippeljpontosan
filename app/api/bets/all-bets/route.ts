@@ -74,16 +74,17 @@ export async function GET(req: NextRequest) {
       if (e.dailyPool) eventMap.set(e.id, e);
     }
 
-    let lastCarried = 0;
+    let runningCarry = 0;
     for (const e of allEvents) {
       if (!e.dailyPool) continue;
-      if (lastCarried > 0) {
-        e.dailyPool.carriedFromPrevious = lastCarried;
-      }
+
+      const currentDaily = e.dailyPool.totalDaily || 0;
+      e.dailyPool.carriedFromPrevious = runningCarry;
+
       if (e.dailyPool.totalDistributed === 0) {
-        lastCarried = (e.dailyPool.totalDaily || 0) + (e.dailyPool.carriedFromPrevious || 0);
+        runningCarry = runningCarry + currentDaily;
       } else {
-        lastCarried = 0;
+        runningCarry = 0;
       }
     }
 

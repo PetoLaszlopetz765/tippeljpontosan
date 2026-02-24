@@ -185,22 +185,21 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       where: { eventId },
     });
 
+    // Az előző esemény maradéka csak akkor jön át, ha nem lett kiosztva
+    const previousEvent = await prisma.event.findFirst({
+      where: {
+        kickoffTime: { lt: event.kickoffTime },
+        status: { in: ["CLOSED", "LEZÁRT"] },
+      },
+      orderBy: { kickoffTime: "desc" },
+      include: { dailyPool: true },
+    });
+
+    const carriedFromPrevious = previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0
+      ? (previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious)
+      : 0;
+
     if (!dailyPool) {
-      // Új esemény pool: az előző esemény maradékát átveszik (időrendi sorrendben)
-      const previousEvent = await prisma.event.findFirst({
-        where: {
-          kickoffTime: { lt: event.kickoffTime },
-          status: { in: ["CLOSED", "LEZÁRT"] },
-        },
-        orderBy: { kickoffTime: 'desc' },
-        include: { dailyPool: true },
-      });
-      
-      // Ha az előző esemény poolját nem osztották ki (totalDistributed == 0),
-      // akkor a teljes maradék (totalDaily + carriedFromPrevious) átjön.
-      const carriedFromPrevious = previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0
-        ? (previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious)
-        : 0;
       
       dailyPool = await prisma.dailyPool.create({
         data: {
@@ -214,7 +213,10 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       // Pool már létezik, frissítjük (ha újra futtatják az eredményt)
       dailyPool = await prisma.dailyPool.update({
         where: { eventId },
-        data: { totalDaily: dailyAmount },
+        data: {
+          totalDaily: dailyAmount,
+          carriedFromPrevious,
+        },
       });
     }
 
