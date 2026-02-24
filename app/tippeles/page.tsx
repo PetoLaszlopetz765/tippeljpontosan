@@ -33,6 +33,7 @@ export default function TippelesPage() {
   const [bets, setBets] = useState<Record<number, BetInput>>({});
   const [userBets, setUserBets] = useState<Record<number, BetInput>>({});
   const [message, setMessage] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     // Redirect to login if session token is missing
@@ -91,13 +92,17 @@ export default function TippelesPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
+
     setMessage("");
+    setSubmitting(true);
 
     // Check session token before submit
     const token = sessionStorage.getItem("token");
     if (!token) {
       setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
       window.location.href = "/login";
+      setSubmitting(false);
       return;
     }
 
@@ -110,48 +115,55 @@ export default function TippelesPage() {
 
     if (payload.length === 0) {
       setMessage("⚠️ Minden nyitott eseményre tippeltél már! ⚠️");
+      setSubmitting(false);
       return;
     }
 
-    const res = await fetch("/api/bets", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("/api/bets", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      setMessage(data.message || "✅ Tipp(ek) sikeresen leadva!");
-      setBets({}); // Töröljük a form mezőket
+      if (res.ok) {
+        const data = await res.json();
+        setMessage(data.message || "✅ Tipp(ek) sikeresen leadva!");
+        setBets({}); // Töröljük a form mezőket
 
-      // Felhasználó tippjeit újratöltjük
-      setTimeout(async () => {
-        const betsRes = await fetch("/api/bets/my-bets", {
-          headers: { "Authorization": `Bearer ${token}` },
-          cache: "no-store"
-        });
-        if (betsRes.ok) {
-          const data = await betsRes.json();
-          const betsMap: Record<number, BetInput> = {};
-          data.forEach((bet: any) => {
-            betsMap[bet.eventId] = {
-              predictedHomeGoals: bet.predictedHomeGoals,
-              predictedAwayGoals: bet.predictedAwayGoals,
-            };
+        // Felhasználó tippjeit újratöltjük
+        setTimeout(async () => {
+          const betsRes = await fetch("/api/bets/my-bets", {
+            headers: { "Authorization": `Bearer ${token}` },
+            cache: "no-store"
           });
-          setUserBets(betsMap);
-        }
-      }, 500);
+          if (betsRes.ok) {
+            const data = await betsRes.json();
+            const betsMap: Record<number, BetInput> = {};
+            data.forEach((bet: any) => {
+              betsMap[bet.eventId] = {
+                predictedHomeGoals: bet.predictedHomeGoals,
+                predictedAwayGoals: bet.predictedAwayGoals,
+              };
+            });
+            setUserBets(betsMap);
+          }
+        }, 500);
 
-      // ÚJ: Értesítjük a verseny oldalt, hogy frissítse a tippeket és az events pool adatokat
-      localStorage.setItem("refreshBets", Date.now().toString());
-      localStorage.setItem("refreshEvents", Date.now().toString());
-    } else {
-      const data = await res.json();
-      setMessage(data.message || "❌ Hiba történt a tipp leadásakor.");
+        // ÚJ: Értesítjük a verseny oldalt, hogy frissítse a tippeket és az events pool adatokat
+        localStorage.setItem("refreshBets", Date.now().toString());
+        localStorage.setItem("refreshEvents", Date.now().toString());
+      } else {
+        const data = await res.json();
+        setMessage(data.message || "❌ Hiba történt a tipp leadásakor.");
+      }
+    } catch {
+      setMessage("❌ Hálózati hiba történt a tipp leadásakor.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -287,9 +299,14 @@ export default function TippelesPage() {
           {hasOpenEvent && (
             <button
               type="submit"
-              className="w-full h-12 rounded-2xl bg-green-700 text-white font-extrabold shadow hover:bg-green-800 active:bg-green-900 transition"
+              disabled={submitting}
+              className={`w-full h-12 rounded-2xl text-white font-extrabold shadow transition ${
+                submitting
+                  ? "bg-green-400 cursor-not-allowed"
+                  : "bg-green-700 hover:bg-green-800 active:bg-green-900"
+              }`}
             >
-              Tipp leadása
+              {submitting ? "Küldés..." : "Tipp leadása"}
             </button>
           )}
 

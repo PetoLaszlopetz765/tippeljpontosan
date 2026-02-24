@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
+import { Prisma } from "@prisma/client";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
@@ -52,7 +53,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    // body: [{ eventId, predictedHomeGoals, predictedAwayGoals }, ...]
+    if (!Array.isArray(body) || body.length === 0) {
+      return NextResponse.json({ message: "Nincs feldolgozható tipp" }, { status: 400 });
+    }
 
     // Tranzakcióban kezeljük a teljes folyamatot
     const result = await prisma.$transaction(async (tx) => {
@@ -62,27 +65,42 @@ export async function POST(req: NextRequest) {
         throw new Error("Felhasználó nem található");
       }
 
+      const requestedEventIds = Array.from(
+        new Set(
+          body
+            .map((bet: any) => Number(bet?.eventId))
+            .filter((eventId: number) => Number.isFinite(eventId))
+        )
+      );
+
+      const events = await tx.event.findMany({
+        where: { id: { in: requestedEventIds } },
+        select: {
+          id: true,
+          creditCost: true,
+          finalHomeGoals: true,
+          finalAwayGoals: true,
+        },
+      });
+
+      const eventById = new Map(events.map((event) => [event.id, event]));
+
+      const existingBets = await tx.bet.findMany({
+        where: {
+          userId,
+          eventId: { in: requestedEventIds },
+        },
+        select: { eventId: true },
+      });
+
+      const existingEventIds = new Set(existingBets.map((bet) => bet.eventId));
+
       let totalCreditNeeded = 0;
-      const betsToProcess: Array<any> = [];
-
-      // Első körben ellenőrizzük, hogy van-e elég kredit és tárolunk minden információt
-      for (const bet of body) {
-        const event = await tx.event.findUnique({ where: { id: bet.eventId } });
+      for (const eventId of requestedEventIds) {
+        if (existingEventIds.has(eventId)) continue;
+        const event = eventById.get(eventId);
         if (!event) continue;
-
-        // Ellenőrizzük, hogy már van-e erre a felhasználónak tipja
-        const existingBet = await tx.bet.findUnique({
-          where: { userId_eventId: { userId, eventId: bet.eventId } },
-        });
-
-        const isNewBet = !existingBet;
-
-        // Ha új tipp, akkor kell a kredit
-        if (isNewBet) {
-          totalCreditNeeded += event.creditCost;
-        }
-
-        betsToProcess.push({ ...bet, event, isNewBet });
+        totalCreditNeeded += event.creditCost;
       }
 
       // Kredit ellenőrzés
@@ -93,8 +111,19 @@ export async function POST(req: NextRequest) {
       // Kreditek levonása és tippek feldolgozása
       let creditSpent = 0;
 
-      for (const betData of betsToProcess) {
-        const { event, eventId, predictedHomeGoals, predictedAwayGoals, isNewBet } = betData;
+      for (const betData of body) {
+        const eventId = Number(betData?.eventId);
+        const predictedHomeGoals = Number(betData?.predictedHomeGoals);
+        const predictedAwayGoals = Number(betData?.predictedAwayGoals);
+
+        if (!Number.isFinite(eventId) || !Number.isFinite(predictedHomeGoals) || !Number.isFinite(predictedAwayGoals)) {
+          continue;
+        }
+
+        const event = eventById.get(eventId);
+        if (!event) {
+          continue;
+        }
 
         const points = event.finalHomeGoals !== null && event.finalAwayGoals !== null
           ? calculatePoints(
@@ -103,55 +132,71 @@ export async function POST(req: NextRequest) {
             )
           : 0;
 
-        if (isNewBet) {
-          // Új tipp - kredit levonása
-          creditSpent += event.creditCost;
-        }
-        // Minden tippnél (csak új tippnél van kredit levonás, de pool mindig nő)
-        const dailyAmount = Math.floor(event.creditCost * 0.6);
-        const championshipAmount = event.creditCost - dailyAmount;
-        // Frissítjük vagy létrehozzuk a dailyPool rekordot
-        const existingPool = await tx.dailyPool.findUnique({ where: { eventId } });
-        if (existingPool) {
-          await tx.dailyPool.update({
-            where: { eventId },
-            data: { totalDaily: { increment: dailyAmount } },
-          });
-        } else {
-          await tx.dailyPool.create({
+        let createdNewBet = false;
+
+        try {
+          await tx.bet.create({
             data: {
+              userId,
               eventId,
-              date: new Date(event.kickoffTime),
-              totalDaily: dailyAmount,
-              carriedFromPrevious: 0,
-              totalDistributed: 0,
+              predictedHomeGoals,
+              predictedAwayGoals,
+              pointsAwarded: points,
+              creditSpent: event.creditCost,
             },
           });
+          createdNewBet = true;
+        } catch (error) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002"
+          ) {
+            await tx.bet.update({
+              where: { userId_eventId: { userId, eventId } },
+              data: {
+                predictedHomeGoals,
+                predictedAwayGoals,
+                pointsAwarded: points,
+              },
+            });
+          } else {
+            throw error;
+          }
         }
-        // Bajnoki (globális) pool frissítése vagy létrehozása
-        await tx.creditPool.upsert({
-          where: { id: 1 },
-          update: { totalChampionship: { increment: championshipAmount } },
-          create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
-        });
 
-        // UPSERT tipp
-        await tx.bet.upsert({
-          where: { userId_eventId: { userId, eventId } },
-          update: { 
-            predictedHomeGoals, 
-            predictedAwayGoals, 
-            pointsAwarded: points 
-          },
-          create: { 
-            userId, 
-            eventId, 
-            predictedHomeGoals, 
-            predictedAwayGoals, 
-            pointsAwarded: points,
-            creditSpent: event.creditCost
-          },
-        });
+        if (createdNewBet) {
+          creditSpent += event.creditCost;
+
+          const dailyAmount = Math.floor(event.creditCost * 0.6);
+          const championshipAmount = event.creditCost - dailyAmount;
+
+          const existingPool = await tx.dailyPool.findUnique({ where: { eventId } });
+          if (existingPool) {
+            await tx.dailyPool.update({
+              where: { eventId },
+              data: { totalDaily: { increment: dailyAmount } },
+            });
+          } else {
+            const fullEvent = await tx.event.findUnique({ where: { id: eventId } });
+            if (fullEvent) {
+              await tx.dailyPool.create({
+                data: {
+                  eventId,
+                  date: new Date(fullEvent.kickoffTime),
+                  totalDaily: dailyAmount,
+                  carriedFromPrevious: 0,
+                  totalDistributed: 0,
+                },
+              });
+            }
+          }
+
+          await tx.creditPool.upsert({
+            where: { id: 1 },
+            update: { totalChampionship: { increment: championshipAmount } },
+            create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
+          });
+        }
       }
 
       // Felhasználó kreditjeinek és pontjainak frissítése csak az összes tipp feldolgozása után
@@ -172,7 +217,7 @@ export async function POST(req: NextRequest) {
       }
 
       return { creditSpent };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     return NextResponse.json({ 
       message: `✅ Tippek leadva! ${result.creditSpent > 0 ? `${result.creditSpent} kredit levonásra került.` : 'Már meglévő tippek frissítve.'}`,
