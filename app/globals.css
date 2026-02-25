@@ -34,6 +34,38 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Globális dark mód felülírások a meglévő oldalak utility osztályaira */
+:root.dark .bg-gray-100 { background-color: #0b1220 !important; }
+:root.dark .bg-white { background-color: #111827 !important; }
+:root.dark .bg-gray-50 { background-color: #1f2937 !important; }
+:root.dark .bg-blue-50 { background-color: rgba(30, 58, 138, 0.28) !important; }
+:root.dark .bg-purple-50 { background-color: rgba(88, 28, 135, 0.28) !important; }
+:root.dark .bg-green-50 { background-color: rgba(20, 83, 45, 0.28) !important; }
+:root.dark .bg-yellow-50 { background-color: rgba(113, 63, 18, 0.28) !important; }
+:root.dark .bg-red-50 { background-color: rgba(127, 29, 29, 0.28) !important; }
+
+:root.dark .text-gray-900 { color: #f3f4f6 !important; }
+:root.dark .text-gray-800 { color: #e5e7eb !important; }
+:root.dark .text-gray-700 { color: #d1d5db !important; }
+:root.dark .text-gray-600 { color: #cbd5e1 !important; }
+:root.dark .text-gray-500 { color: #9ca3af !important; }
+:root.dark .text-gray-400 { color: #94a3b8 !important; }
+
+:root.dark .border-gray-200 { border-color: #334155 !important; }
+:root.dark .border-blue-200 { border-color: #1d4ed8 !important; }
+:root.dark .border-purple-200 { border-color: #6b21a8 !important; }
+:root.dark .border-green-200 { border-color: #166534 !important; }
+:root.dark .border-yellow-200 { border-color: #92400e !important; }
+:root.dark .border-red-200 { border-color: #991b1b !important; }
+
+:root.dark input,
+:root.dark textarea,
+:root.dark select {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
