@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ChatMessage = {
   id: number;
@@ -27,6 +27,8 @@ export default function ChatPage() {
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
   const [updating, setUpdating] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const didInitialScrollRef = useRef(false);
 
   const canSend = text.trim().length > 0 && !loading;
 
@@ -75,6 +77,17 @@ export default function ChatPage() {
       map.set(msg.id, msg);
     }
     return map;
+  }, [messages]);
+
+  useEffect(() => {
+    if (didInitialScrollRef.current) return;
+    if (messages.length === 0) return;
+
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    container.scrollTop = container.scrollHeight;
+    didInitialScrollRef.current = true;
   }, [messages]);
 
   async function sendMessage(e: React.FormEvent) {
@@ -212,7 +225,10 @@ export default function ChatPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-4 sm:mb-6 text-center">💬 Chat</h1>
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 sm:p-4 h-[calc(100vh-290px)] sm:h-[60vh] overflow-y-auto space-y-3">
+        <div
+          ref={messagesContainerRef}
+          className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 sm:p-4 h-[calc(100vh-290px)] sm:h-[60vh] overflow-y-auto space-y-3"
+        >
           {messages.length === 0 && (
             <p className="text-center text-gray-600">Még nincs üzenet. Írj te elsőként! 👋</p>
           )}
