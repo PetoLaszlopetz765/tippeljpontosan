@@ -22,14 +22,28 @@ export const metadata: Metadata = {
   description: "Baráti tippjáték – valódi pénz nélkül",
 };
 
+const themeBootstrapScript = `
+(() => {
+  try {
+    const stored = localStorage.getItem("theme");
+    const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const resolved = theme === "system" ? (systemDark ? "dark" : "light") : theme;
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(resolved);
+  } catch {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="hu">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 flex flex-col min-h-screen`}>
+    <html lang="hu" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         <Navbar />
         <main className="flex-grow">
           {children}
