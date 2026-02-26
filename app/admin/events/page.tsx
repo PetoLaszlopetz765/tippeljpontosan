@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 interface Event {
@@ -29,7 +29,11 @@ export default function EventsAdminPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
-  const [kickoffTime, setKickoffTime] = useState("");
+  const [kickoffYear, setKickoffYear] = useState("");
+  const [kickoffMonth, setKickoffMonth] = useState("");
+  const [kickoffDay, setKickoffDay] = useState("");
+  const [kickoffHour, setKickoffHour] = useState("");
+  const [kickoffMinute, setKickoffMinute] = useState("");
   const [creditCost, setCreditCost] = useState("100");
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -43,6 +47,24 @@ export default function EventsAdminPage() {
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
   const [poolAmount, setPoolAmount] = useState<{ [eventId: number]: string }>({});
   const [poolLoading, setPoolLoading] = useState<number | null>(null);
+  const monthRef = useRef<HTMLInputElement | null>(null);
+  const dayRef = useRef<HTMLInputElement | null>(null);
+  const hourRef = useRef<HTMLInputElement | null>(null);
+  const minuteRef = useRef<HTMLInputElement | null>(null);
+
+  function handleDatePartChange(
+    value: string,
+    setValue: (v: string) => void,
+    maxLength: number,
+    nextRef?: { current: HTMLInputElement | null }
+  ) {
+    const digits = value.replace(/\D/g, "").slice(0, maxLength);
+    setValue(digits);
+    if (digits.length === maxLength && nextRef?.current) {
+      nextRef.current.focus();
+      nextRef.current.select();
+    }
+  }
 
   useEffect(() => {
     console.log("🔧 EVENTS ADMIN PAGE MOUNTED");
@@ -98,6 +120,55 @@ export default function EventsAdminPage() {
       return;
     }
 
+    if (
+      kickoffYear.length !== 4 ||
+      kickoffMonth.length !== 2 ||
+      kickoffDay.length !== 2 ||
+      kickoffHour.length !== 2 ||
+      kickoffMinute.length !== 2
+    ) {
+      setMessage("✗ Kérlek töltsd ki az időpontot teljesen (ÉÉÉÉ-HH-NN ÓÓ:PP)");
+      setLoading(false);
+      return;
+    }
+
+    const year = Number(kickoffYear);
+    const month = Number(kickoffMonth);
+    const day = Number(kickoffDay);
+    const hour = Number(kickoffHour);
+    const minute = Number(kickoffMinute);
+
+    if (
+      Number.isNaN(year) ||
+      Number.isNaN(month) ||
+      Number.isNaN(day) ||
+      Number.isNaN(hour) ||
+      Number.isNaN(minute) ||
+      month < 1 || month > 12 ||
+      day < 1 || day > 31 ||
+      hour < 0 || hour > 23 ||
+      minute < 0 || minute > 59
+    ) {
+      setMessage("✗ Érvénytelen időpont formátum.");
+      setLoading(false);
+      return;
+    }
+
+    const kickoffTime = `${kickoffYear}-${kickoffMonth}-${kickoffDay}T${kickoffHour}:${kickoffMinute}`;
+    const checkDate = new Date(`${kickoffTime}:00`);
+    if (
+      Number.isNaN(checkDate.getTime()) ||
+      checkDate.getFullYear() !== year ||
+      checkDate.getMonth() + 1 !== month ||
+      checkDate.getDate() !== day ||
+      checkDate.getHours() !== hour ||
+      checkDate.getMinutes() !== minute
+    ) {
+      setMessage("✗ Érvénytelen dátum/idő (pl. hónap napjai miatt). ");
+      setLoading(false);
+      return;
+    }
+
     try {
       // Do NOT convert timezone, just send the local time string as entered
       const res = await fetch("/api/events", {
@@ -113,7 +184,11 @@ export default function EventsAdminPage() {
         setMessage("✓ Esemény létrehozva!");
         setHomeTeam("");
         setAwayTeam("");
-        setKickoffTime("");
+        setKickoffYear("");
+        setKickoffMonth("");
+        setKickoffDay("");
+        setKickoffHour("");
+        setKickoffMinute("");
         setCreditCost("100");
         await loadEvents();
       } else {
@@ -410,16 +485,59 @@ export default function EventsAdminPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-1">
                   Kezdés időpontja
                 </label>
-                <input
-                  type="datetime-local"
-                  value={kickoffTime}
-                  onChange={(e) => setKickoffTime(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
-                    focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
-                  required
-                />
+                <div className="grid grid-cols-5 gap-2">
+                  <input
+                    value={kickoffYear}
+                    onChange={(e) => handleDatePartChange(e.target.value, setKickoffYear, 4, monthRef)}
+                    inputMode="numeric"
+                    placeholder="ÉÉÉÉ"
+                    className="h-12 px-2 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                    required
+                  />
+                  <input
+                    ref={monthRef}
+                    value={kickoffMonth}
+                    onChange={(e) => handleDatePartChange(e.target.value, setKickoffMonth, 2, dayRef)}
+                    inputMode="numeric"
+                    placeholder="HH"
+                    className="h-12 px-2 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                    required
+                  />
+                  <input
+                    ref={dayRef}
+                    value={kickoffDay}
+                    onChange={(e) => handleDatePartChange(e.target.value, setKickoffDay, 2, hourRef)}
+                    inputMode="numeric"
+                    placeholder="NN"
+                    className="h-12 px-2 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                    required
+                  />
+                  <input
+                    ref={hourRef}
+                    value={kickoffHour}
+                    onChange={(e) => handleDatePartChange(e.target.value, setKickoffHour, 2, minuteRef)}
+                    inputMode="numeric"
+                    placeholder="ÓÓ"
+                    className="h-12 px-2 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                    required
+                  />
+                  <input
+                    ref={minuteRef}
+                    value={kickoffMinute}
+                    onChange={(e) => handleDatePartChange(e.target.value, setKickoffMinute, 2)}
+                    inputMode="numeric"
+                    placeholder="PP"
+                    className="h-12 px-2 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                    required
+                  />
+                </div>
                 <p className="mt-1 text-sm text-gray-700">
-                  A meccs létrehozás után automatikusan nyitott lesz.
+                  Formátum: ÉÉÉÉ HH NN ÓÓ PP (pl. 2026 03 12 18 45). A meccs létrehozás után automatikusan nyitott lesz.
                 </p>
               </div>
 
