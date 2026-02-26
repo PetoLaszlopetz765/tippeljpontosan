@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,8 @@ async function main() {
       credits: true,
     },
   });
-  console.log("\nFelhasználók az adatbázisban:");
+
+  console.log('\nFelhasználók az adatbázisban:');
   users.forEach((user) => {
     console.log(user);
   });

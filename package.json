@@ -8,7 +8,13 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "tool:create-admin": "tsx tools/create-admin.ts",
+    "tool:delete-admin": "tsx tools/delete-admin.ts",
+    "tool:list-users": "tsx tools/list-users.ts",
+    "tool:list-pools": "tsx tools/list-pools.ts",
+    "tool:diagnose-carry": "tsx tools/diagnose-pool-carryover.ts",
+    "tool:fix-carry": "tsx tools/fix-pool-carryover.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
