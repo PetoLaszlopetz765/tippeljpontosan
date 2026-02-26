@@ -189,7 +189,7 @@ export default function RanglistaPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 px-4 py-10">
+      <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-4 py-10">
         <div className="max-w-6xl mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
             <p className="text-red-800 font-semibold">{error}</p>
@@ -200,15 +200,15 @@ export default function RanglistaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-10">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-4 py-10">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900">⚽ Verseny Állása</h1>
-          <p className="text-gray-700 mt-2">Játékosok ranglistája és összes tippek</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100">⚽ Verseny Állása</h1>
+          <p className="text-gray-700 dark:text-slate-300 mt-2">Játékosok ranglistája és összes tippek</p>
           <div className="flex flex-col md:flex-row gap-4 mt-4 mb-2 items-center justify-center">
             <div className="bg-blue-50 border border-blue-200 rounded-xl px-6 py-3 text-blue-900 font-semibold text-lg text-center">
               Következő esemény napi poolja: <span className="font-extrabold">{nextEventPool}</span> kredit
-              <div className="text-sm text-blue-800 mt-1">
+              <div className="text-sm text-blue-800 dark:text-blue-200 mt-1">
                 {nextEventLabel}{nextEventTime ? ` • ${nextEventTime}` : ""}
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function RanglistaPage() {
               >
                 {closeLoading ? "Lezárás..." : "Verseny lezárása (nyeremények kiosztása)"}
               </button>
-              {closeMsg && <div className="text-center text-lg font-semibold text-green-700 mt-2">{closeMsg}</div>}
+              {closeMsg && <div className="text-center text-lg font-semibold text-green-700 dark:text-green-300 mt-2">{closeMsg}</div>}
             </div>
           )}
         </div>
@@ -256,16 +256,16 @@ export default function RanglistaPage() {
         <div className="mb-8" />
 
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Betöltés...</div>
+          <div className="text-center py-12 text-gray-500 dark:text-slate-400">Betöltés...</div>
         ) : tab === "ranking" ? (
           // RANGLISTA TAB
           <div>
             {/* Asztali nézet: táblázat */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hidden md:block">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hidden md:block">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-purple-50 to-purple-100 border-b border-gray-200">
+                    <tr className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/30 border-b border-gray-200 dark:border-slate-700">
                       <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900">Hely</th>
                       <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900">Játékos</th>
                       <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Pontok</th>
@@ -285,7 +285,7 @@ export default function RanglistaPage() {
                         return a.username.localeCompare(b.username);
                       })
                       .map((user, index) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
+                        <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
                           <td className="px-4 py-4">
                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-white ${
                               index === 0 ? "bg-yellow-500" :
@@ -340,7 +340,7 @@ export default function RanglistaPage() {
                   return a.username.localeCompare(b.username);
                 })
                 .map((user, index) => (
-                  <div key={user.id} className="border border-purple-200 rounded-xl p-4 bg-white shadow-sm">
+                  <div key={user.id} className="border border-purple-200 dark:border-purple-800 rounded-xl p-4 bg-white dark:bg-slate-800 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-white text-lg ${
@@ -353,7 +353,7 @@ export default function RanglistaPage() {
                         </span>
                         <div>
                           <div className="font-extrabold text-gray-900">{user.username}</div>
-                          <div className="text-xs text-gray-600">Tippek: {user.tipsCount}</div>
+                          <div className="text-xs text-gray-600 dark:text-slate-300">Tippek: {user.tipsCount}</div>
                         </div>
                       </div>
                       <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-3 py-1 font-bold text-purple-900 text-sm">
@@ -415,12 +415,12 @@ export default function RanglistaPage() {
                 {paginatedEvents.map(({ event, bets }) => {
                 // Tipp lista és fejléc
                   return (
-                  <div key={event.id} className="bg-white rounded-2xl shadow-md border-2 border-purple-300 p-6 mb-4">
+                  <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-md border-2 border-purple-300 dark:border-purple-800 p-6 mb-4">
                     {/* Esemény fejléc */}
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
                       <div>
                         <div className="text-lg font-bold text-purple-900">{event.homeTeam} – {event.awayTeam}</div>
-                        <div className="text-sm text-gray-600">{new Date(event.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })}</div>
+                        <div className="text-sm text-gray-600 dark:text-slate-300">{new Date(event.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })}</div>
                       </div>
                       <div className="flex flex-col md:items-end gap-1">
                         <span className="text-sm text-gray-700">Feltett kredit: <span className="font-semibold text-blue-900">{event.creditCost}</span></span>
@@ -454,7 +454,7 @@ export default function RanglistaPage() {
                         <div className="overflow-x-auto hidden md:block">
                           <table className="w-full text-sm">
                             <thead>
-                              <tr className="bg-purple-50 border-b border-purple-200">
+                              <tr className="bg-purple-50 dark:bg-purple-900/30 border-b border-purple-200 dark:border-purple-800">
                                 <th className="px-4 py-3 text-left font-semibold text-gray-900">Játékos</th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">Tippje</th>
                                 <th className="px-4 py-3 text-center font-semibold text-gray-900">Pont</th>
@@ -526,7 +526,7 @@ export default function RanglistaPage() {
                               wonCredit = Math.floor(totalDistributed / winCount);
                             }
                             return (
-                              <div key={bet.id} className="border border-purple-200 rounded-xl p-3 bg-purple-50/40">
+                              <div key={bet.id} className="border border-purple-200 dark:border-purple-800 rounded-xl p-3 bg-purple-50/40 dark:bg-purple-900/30">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="font-semibold text-gray-900">{bet.user.username}</span>
                                   <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${

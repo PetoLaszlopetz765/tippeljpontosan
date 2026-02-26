@@ -120,15 +120,15 @@ export default function EsemenyekPage() {
   }, [myBets]);
 
   return (
-    <div className="min-h-screen bg-gray-100 px-3 sm:px-4 py-6 sm:py-10">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-3 sm:px-4 py-6 sm:py-10">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">📅 Mai események</h1>
-          <p className="text-gray-700 mt-2 text-sm sm:text-base">Csak a rendszeridő szerinti mai nap eseményei.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100">📅 Mai események</h1>
+          <p className="text-gray-700 dark:text-slate-300 mt-2 text-sm sm:text-base">Csak a rendszeridő szerinti mai nap eseményei.</p>
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center text-gray-600">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-6 text-center text-gray-600 dark:text-slate-300">
             Betöltés...
           </div>
         ) : error ? (
@@ -136,7 +136,7 @@ export default function EsemenyekPage() {
             {error}
           </div>
         ) : todayEvents.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center text-gray-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-6 text-center text-gray-700 dark:text-slate-300">
             Ma nincs megjeleníthető esemény.
           </div>
         ) : (
@@ -147,20 +147,20 @@ export default function EsemenyekPage() {
               const eventBets = allVisibleBets.filter((bet) => bet.eventId === event.id);
 
               return (
-                <div key={event.id} className="bg-white rounded-2xl border border-blue-200 shadow-sm p-4 sm:p-5">
+                <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-slate-100 leading-tight">
                       {event.homeTeam} – {event.awayTeam}
                     </h2>
-                    <span className="text-xs sm:text-sm font-semibold px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                    <span className="text-xs sm:text-sm font-semibold px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
                       {event.status}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                    <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
-                      <p className="text-gray-600 text-xs mb-1">Kezdés</p>
-                      <p className="font-semibold text-gray-900">
+                    <div className="rounded-xl border border-gray-200 dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-700/40">
+                      <p className="text-gray-600 dark:text-slate-300 text-xs mb-1">Kezdés</p>
+                      <p className="font-semibold text-gray-900 dark:text-slate-100">
                         {new Date(event.kickoffTime).toLocaleString("hu-HU", {
                           timeZone: "Europe/Budapest",
                           month: "short",
@@ -171,19 +171,19 @@ export default function EsemenyekPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
-                      <p className="text-gray-600 text-xs mb-1">Tipp ára</p>
-                      <p className="font-semibold text-gray-900">{event.creditCost} kredit</p>
+                    <div className="rounded-xl border border-gray-200 dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-700/40">
+                      <p className="text-gray-600 dark:text-slate-300 text-xs mb-1">Tipp ára</p>
+                      <p className="font-semibold text-gray-900 dark:text-slate-100">{event.creditCost} kredit</p>
                     </div>
 
-                    <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
-                      <p className="text-gray-600 text-xs mb-1">Napi pool</p>
-                      <p className="font-semibold text-gray-900">{poolTotal} kredit</p>
+                    <div className="rounded-xl border border-gray-200 dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-700/40">
+                      <p className="text-gray-600 dark:text-slate-300 text-xs mb-1">Napi pool</p>
+                      <p className="font-semibold text-gray-900 dark:text-slate-100">{poolTotal} kredit</p>
                     </div>
 
-                    <div className="rounded-xl border border-gray-200 p-3 bg-gray-50 sm:col-span-3">
-                      <p className="text-gray-600 text-xs mb-1">Végeredmény</p>
-                      <p className="font-semibold text-gray-900">
+                    <div className="rounded-xl border border-gray-200 dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-700/40 sm:col-span-3">
+                      <p className="text-gray-600 dark:text-slate-300 text-xs mb-1">Végeredmény</p>
+                      <p className="font-semibold text-gray-900 dark:text-slate-100">
                         {event.finalHomeGoals !== null && event.finalAwayGoals !== null
                           ? `${event.finalHomeGoals} - ${event.finalAwayGoals}`
                           : "Még nincs végeredmény"}
@@ -191,21 +191,21 @@ export default function EsemenyekPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 rounded-xl border border-purple-200 bg-purple-50 p-3">
-                    <p className="text-xs text-purple-700 mb-1">Saját tipped</p>
+                  <div className="mt-3 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30 p-3">
+                    <p className="text-xs text-purple-700 dark:text-purple-200 mb-1">Saját tipped</p>
                     {myBet ? (
-                      <p className="font-bold text-purple-900 text-lg">
+                      <p className="font-bold text-purple-900 dark:text-purple-100 text-lg">
                         {myBet.predictedHomeGoals} – {myBet.predictedAwayGoals}
                       </p>
                     ) : (
-                      <p className="font-semibold text-gray-700">Erre az eseményre még nem tippeltél.</p>
+                      <p className="font-semibold text-gray-700 dark:text-slate-300">Erre az eseményre még nem tippeltél.</p>
                     )}
                   </div>
 
-                  <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
-                    <p className="text-xs text-blue-700 mb-2">Összes tipp erre az eseményre</p>
+                  <div className="mt-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 p-3">
+                    <p className="text-xs text-blue-700 dark:text-blue-200 mb-2">Összes tipp erre az eseményre</p>
                     {eventBets.length === 0 ? (
-                      <p className="font-semibold text-gray-700">Még nincs leadott tipp.</p>
+                      <p className="font-semibold text-gray-700 dark:text-slate-300">Még nincs leadott tipp.</p>
                     ) : (
                       <div className="grid gap-2">
                         {eventBets.map((bet) => {
@@ -215,14 +215,14 @@ export default function EsemenyekPage() {
                             <div
                               key={bet.id}
                               className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
-                                isOwn ? "border-purple-300 bg-purple-100" : "border-blue-200 bg-white"
+                                isOwn ? "border-purple-300 dark:border-purple-700 bg-purple-100 dark:bg-purple-900/40" : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800"
                               }`}
                             >
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                                 {bet.user.username}
                                 {isOwn ? " (Te)" : ""}
                               </p>
-                              <p className="text-sm font-bold text-blue-900">
+                              <p className="text-sm font-bold text-blue-900 dark:text-blue-200">
                                 {bet.predictedHomeGoals} - {bet.predictedAwayGoals}
                               </p>
                             </div>
