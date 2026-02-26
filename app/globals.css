@@ -153,6 +153,18 @@ body {
   color: #111827 !important;
   border-color: #d1d5db !important;
 }
+
+.home-page-bg {
+  background: linear-gradient(to bottom, #ffffff, #ecfdf5, #eff6ff);
+}
+
+:root.dark .home-page-bg {
+  background: linear-gradient(to bottom, #020617, #0f172a, #0f172a) !important;
+}
+
+:root.light .home-page-bg {
+  background: linear-gradient(to bottom, #ffffff, #ecfdf5, #eff6ff) !important;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
