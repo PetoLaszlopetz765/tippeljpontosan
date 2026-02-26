@@ -28,9 +28,9 @@ export default function SupportBanner() {
           href="https://tanacsado.alfa.hu/967670?fbclid=IwY2xjawPgWQdleHRuA2FlbQIxMABicmlkETBQVlVpSUg3TDdPU0hYWGxVc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHh8BMEDHxOlEQvWVai1AZiUXb1MxZsbII-IkCysffze8J1WUuoviMZBX2wsn_aem_mJI-9ulVftCt6oORQtjCug"
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
+          className="block w-full max-w-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
         >
-          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 p-4 md:p-0">
+          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 dark:bg-slate-700 p-4 md:p-0">
             <img
               src="https://www.alfa.hu/wp-content/themes/alfa_2022/assets/img/logo.svg"
               alt="Alfa Biztosító logó"
@@ -39,9 +39,9 @@ export default function SupportBanner() {
             />
           </div>
           <div className="flex-1 text-center md:text-left py-2 md:py-0">
-            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Kiemelt partnerünk</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Alfa Biztosító tanácsadó</div>
-            <div className="text-gray-500 text-base md:text-lg">Kattints a részletekért!</div>
+            <div className="text-gray-900 dark:text-slate-100 text-lg md:text-xl font-bold mb-1">Kiemelt partnerünk</div>
+            <div className="text-gray-900 dark:text-slate-100 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Alfa Biztosító tanácsadó</div>
+            <div className="text-gray-500 dark:text-slate-300 text-base md:text-lg">Kattints a részletekért!</div>
           </div>
         </a>
       </div>
@@ -51,9 +51,9 @@ export default function SupportBanner() {
           href="https://ibb.co/HDMZzLhy"
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
+          className="block w-full max-w-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
         >
-          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 p-4 md:p-0">
+          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 dark:bg-slate-700 p-4 md:p-0">
             <img
               src="https://i.ibb.co/1fpcqYzN/Chat-GPT-Image-2026-jan-23-15-01-18.png"
               alt="Chat-GPT-Image-2026-jan-23-15-01-18"
@@ -62,9 +62,9 @@ export default function SupportBanner() {
             />
           </div>
           <div className="flex-1 text-center md:text-left py-2 md:py-0">
-            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Vásárolj megbízható termelőtől!</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Válaszd a hazait!</div>
-            <div className="text-gray-500 text-base md:text-lg">Kattints a képre a nagyításhoz!</div>
+            <div className="text-gray-900 dark:text-slate-100 text-lg md:text-xl font-bold mb-1">Vásárolj megbízható termelőtől!</div>
+            <div className="text-gray-900 dark:text-slate-100 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Válaszd a hazait!</div>
+            <div className="text-gray-500 dark:text-slate-300 text-base md:text-lg">Kattints a képre a nagyításhoz!</div>
           </div>
         </a>
       </div>
@@ -74,9 +74,9 @@ export default function SupportBanner() {
           href="https://imgbb.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
+          className="block w-full max-w-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-4 p-4 md:p-0"
         >
-          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 p-4 md:p-0">
+          <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-gray-100 dark:bg-slate-700 p-4 md:p-0">
             <img
               src="https://i.ibb.co/FbH7yCkF/f85e701f-d4f1-4d1e-9d91-de50511814d5.jpg"
               alt="Mecseki BADBOYS Gomfoci klub"
@@ -85,11 +85,11 @@ export default function SupportBanner() {
             />
           </div>
           <div className="flex-1 text-center md:text-left py-2 md:py-0">
-            <div className="text-gray-900 text-lg md:text-xl font-bold mb-1">Sportklubok támogatása</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">MECSEKI</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">BAD BOYS</div>
-            <div className="text-gray-900 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Gombfoci club</div>
-            <div className="text-gray-500 text-base md:text-lg">Partnerünk a helyi sportban!</div>
+            <div className="text-gray-900 dark:text-slate-100 text-lg md:text-xl font-bold mb-1">Sportklubok támogatása</div>
+            <div className="text-gray-900 dark:text-slate-100 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">MECSEKI</div>
+            <div className="text-gray-900 dark:text-slate-100 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">BAD BOYS</div>
+            <div className="text-gray-900 dark:text-slate-100 text-2xl md:text-3xl font-extrabold tracking-wide mb-1">Gombfoci club</div>
+            <div className="text-gray-500 dark:text-slate-300 text-base md:text-lg">Partnerünk a helyi sportban!</div>
           </div>
         </a>
       </div>
