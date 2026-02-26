@@ -110,6 +110,49 @@ body {
   color: #e5e7eb !important;
   border-color: #334155 !important;
 }
+
+/* Biztonsági világos mód felülírások: ha a theme váltás során class keveredés lenne,
+   a light mód maradjon jól láthatóan világos minden oldalon. */
+:root.light .bg-gray-100 { background-color: #f3f4f6 !important; }
+:root.light .bg-white { background-color: #ffffff !important; }
+:root.light .bg-gray-50 { background-color: #f9fafb !important; }
+:root.light .bg-blue-50 { background-color: #eff6ff !important; }
+:root.light .bg-purple-50 { background-color: #faf5ff !important; }
+:root.light .bg-green-50 { background-color: #f0fdf4 !important; }
+:root.light .bg-yellow-50 { background-color: #fefce8 !important; }
+:root.light .bg-red-50 { background-color: #fef2f2 !important; }
+
+:root.light .text-gray-900 { color: #111827 !important; }
+:root.light .text-gray-800 { color: #1f2937 !important; }
+:root.light .text-gray-700 { color: #374151 !important; }
+:root.light .text-gray-600 { color: #4b5563 !important; }
+:root.light .text-gray-500 { color: #6b7280 !important; }
+:root.light .text-gray-400 { color: #9ca3af !important; }
+
+:root.light .text-blue-900 { color: #1e3a8a !important; }
+:root.light .text-indigo-900 { color: #312e81 !important; }
+:root.light .text-purple-900 { color: #581c87 !important; }
+:root.light .text-green-900 { color: #14532d !important; }
+:root.light .text-emerald-900 { color: #064e3b !important; }
+:root.light .text-teal-900 { color: #134e4a !important; }
+:root.light .text-yellow-900 { color: #713f12 !important; }
+:root.light .text-orange-900 { color: #7c2d12 !important; }
+:root.light .text-red-900 { color: #7f1d1d !important; }
+
+:root.light .border-gray-200 { border-color: #e5e7eb !important; }
+:root.light .border-blue-200 { border-color: #bfdbfe !important; }
+:root.light .border-purple-200 { border-color: #e9d5ff !important; }
+:root.light .border-green-200 { border-color: #bbf7d0 !important; }
+:root.light .border-yellow-200 { border-color: #fde68a !important; }
+:root.light .border-red-200 { border-color: #fecaca !important; }
+
+:root.light input,
+:root.light textarea,
+:root.light select {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

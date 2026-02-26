@@ -4,7 +4,7 @@ import SupportBanner from "./components/SupportBanner";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-white via-green-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Hero Section */}
         <div className="text-center mb-12">
