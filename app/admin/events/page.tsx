@@ -647,8 +647,8 @@ export default function EventsAdminPage() {
                     </div>
 
                     {/* Pool kezelés */}
-                    <div className="flex gap-2 items-center border-t pt-3">
-                      <label className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center border-t pt-3">
+                      <label className="text-sm font-semibold text-gray-900 sm:whitespace-nowrap">
                         💰 Pool kredit:
                       </label>
                       <input
@@ -657,13 +657,13 @@ export default function EventsAdminPage() {
                         value={poolAmount[e.id] || ""}
                         onChange={(e2) => setPoolAmount({ ...poolAmount, [e.id]: e2.target.value })}
                         placeholder="0"
-                        className="flex-1 h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold
+                        className="w-full sm:flex-1 h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold
                           focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-500"
                       />
                       <button
                         onClick={() => handleUpdatePool(e.id)}
                         disabled={poolLoading === e.id}
-                        className={`px-4 py-2 rounded-lg font-bold transition ${
+                        className={`w-full sm:w-auto px-4 py-2 rounded-lg font-bold transition ${
                           poolLoading === e.id
                             ? "bg-yellow-300 text-yellow-900 cursor-not-allowed"
                             : "bg-yellow-500 text-white hover:bg-yellow-600"

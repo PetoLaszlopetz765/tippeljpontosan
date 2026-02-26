@@ -44,6 +44,10 @@ body {
 :root.dark .bg-green-50 { background-color: rgba(20, 83, 45, 0.28) !important; }
 :root.dark .bg-yellow-50 { background-color: rgba(113, 63, 18, 0.28) !important; }
 :root.dark .bg-red-50 { background-color: rgba(127, 29, 29, 0.28) !important; }
+:root.dark .bg-indigo-50 { background-color: rgba(49, 46, 129, 0.28) !important; }
+:root.dark .bg-orange-50 { background-color: rgba(124, 45, 18, 0.28) !important; }
+:root.dark .bg-teal-50 { background-color: rgba(19, 78, 74, 0.28) !important; }
+:root.dark .bg-emerald-50 { background-color: rgba(6, 78, 59, 0.28) !important; }
 
 :root.dark .text-gray-900 { color: #f3f4f6 !important; }
 :root.dark .text-gray-800 { color: #e5e7eb !important; }
@@ -51,6 +55,38 @@ body {
 :root.dark .text-gray-600 { color: #cbd5e1 !important; }
 :root.dark .text-gray-500 { color: #9ca3af !important; }
 :root.dark .text-gray-400 { color: #94a3b8 !important; }
+:root.dark .text-blue-900,
+:root.dark .text-indigo-900,
+:root.dark .text-purple-900,
+:root.dark .text-green-900,
+:root.dark .text-emerald-900,
+:root.dark .text-teal-900,
+:root.dark .text-yellow-900,
+:root.dark .text-orange-900,
+:root.dark .text-red-900 {
+  color: #e5e7eb !important;
+}
+
+:root.dark .text-blue-800,
+:root.dark .text-indigo-800,
+:root.dark .text-purple-800,
+:root.dark .text-green-800,
+:root.dark .text-emerald-800,
+:root.dark .text-teal-800,
+:root.dark .text-yellow-800,
+:root.dark .text-orange-800,
+:root.dark .text-red-800,
+:root.dark .text-blue-700,
+:root.dark .text-indigo-700,
+:root.dark .text-purple-700,
+:root.dark .text-green-700,
+:root.dark .text-emerald-700,
+:root.dark .text-teal-700,
+:root.dark .text-yellow-700,
+:root.dark .text-orange-700,
+:root.dark .text-red-700 {
+  color: #cbd5e1 !important;
+}
 
 :root.dark .border-gray-200 { border-color: #334155 !important; }
 :root.dark .border-blue-200 { border-color: #1d4ed8 !important; }
@@ -58,6 +94,14 @@ body {
 :root.dark .border-green-200 { border-color: #166534 !important; }
 :root.dark .border-yellow-200 { border-color: #92400e !important; }
 :root.dark .border-red-200 { border-color: #991b1b !important; }
+:root.dark .border-indigo-200 { border-color: #3730a3 !important; }
+:root.dark .border-orange-200 { border-color: #9a3412 !important; }
+:root.dark .border-teal-200 { border-color: #0f766e !important; }
+:root.dark .border-emerald-200 { border-color: #047857 !important; }
+
+:root.dark .from-purple-100 { --tw-gradient-from: rgba(88, 28, 135, 0.45) var(--tw-gradient-from-position) !important; }
+:root.dark .to-purple-200 { --tw-gradient-to: rgba(91, 33, 182, 0.35) var(--tw-gradient-to-position) !important; }
+:root.dark .border-purple-300 { border-color: #7e22ce !important; }
 
 :root.dark input,
 :root.dark textarea,
