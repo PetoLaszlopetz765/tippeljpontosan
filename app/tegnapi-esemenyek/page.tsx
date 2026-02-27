@@ -146,6 +146,10 @@ export default function TegnapiEsemenyekPage() {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
               const eventBets = allVisibleBets.filter((bet) => bet.eventId === event.id);
+              const nonAdminBets = eventBets.filter((bet) => bet.user.username.toLowerCase() !== "admin");
+              const winners = nonAdminBets.filter((bet) => bet.pointsAwarded === 6);
+              const winCount = winners.length;
+              const totalDistributed = event.dailyPool?.totalDistributed || 0;
 
               return (
                 <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm p-4 sm:p-5">
@@ -208,30 +212,128 @@ export default function TegnapiEsemenyekPage() {
                     {eventBets.length === 0 ? (
                       <p className="font-semibold text-gray-700 dark:text-slate-300">Még nincs leadott tipp.</p>
                     ) : (
-                      <div className="grid gap-2">
-                        {eventBets.map((bet) => {
-                          const isOwn = currentUserId !== null && bet.userId === currentUserId;
+                      <>
+                        <div className="overflow-x-auto hidden md:block">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-purple-50 dark:bg-purple-900/30 border-b border-purple-200 dark:border-purple-800">
+                                <th className="px-3 py-2 text-left font-semibold text-gray-900 dark:text-slate-100">Játékos</th>
+                                <th className="px-3 py-2 text-center font-semibold text-gray-900 dark:text-slate-100">Tippje</th>
+                                <th className="px-3 py-2 text-center font-semibold text-gray-900 dark:text-slate-100">Pont</th>
+                                <th className="px-3 py-2 text-center font-semibold text-gray-900 dark:text-slate-100">Nyeremény kredit</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                              {eventBets.map((bet) => {
+                                const isOwn = currentUserId !== null && bet.userId === currentUserId;
+                                let wonCredit = 0;
+                                if (
+                                  event.finalHomeGoals !== null &&
+                                  bet.pointsAwarded === 6 &&
+                                  winCount > 0 &&
+                                  bet.user.username.toLowerCase() !== "admin" &&
+                                  totalDistributed > 0
+                                ) {
+                                  wonCredit = Math.floor(totalDistributed / winCount);
+                                }
 
-                          return (
-                            <div
-                              key={bet.id}
-                              className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
-                                isOwn
-                                  ? "border-purple-300 dark:border-purple-700 bg-purple-100 dark:bg-purple-900/40"
-                                  : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800"
-                              }`}
-                            >
-                              <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                                {bet.user.username}
-                                {isOwn ? " (Te)" : ""}
-                              </p>
-                              <p className="text-sm font-bold text-blue-900 dark:text-blue-200">
-                                {bet.predictedHomeGoals} - {bet.predictedAwayGoals}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
+                                return (
+                                  <tr key={bet.id} className={isOwn ? "bg-purple-100/60 dark:bg-purple-900/25" : ""}>
+                                    <td className="px-3 py-2 font-semibold text-gray-900 dark:text-slate-100">
+                                      {bet.user.username}
+                                      {isOwn ? " (Te)" : ""}
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                      <span className="font-bold text-blue-900 dark:text-blue-200">
+                                        {bet.predictedHomeGoals} - {bet.predictedAwayGoals}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                                        bet.pointsAwarded === 0
+                                          ? "bg-red-50 text-red-900"
+                                          : bet.pointsAwarded <= 2
+                                            ? "bg-yellow-50 text-yellow-900"
+                                            : bet.pointsAwarded <= 4
+                                              ? "bg-blue-50 text-blue-900"
+                                              : "bg-purple-50 text-purple-900"
+                                      }`}>
+                                        {bet.pointsAwarded}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                      {event.finalHomeGoals !== null ? (
+                                        wonCredit > 0 ? (
+                                          <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                                            {wonCredit}
+                                          </span>
+                                        ) : (
+                                          <span className="text-gray-400">0</span>
+                                        )
+                                      ) : (
+                                        <span className="text-gray-400">-</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div className="grid gap-2 md:hidden">
+                          {eventBets.map((bet) => {
+                            const isOwn = currentUserId !== null && bet.userId === currentUserId;
+                            let wonCredit = 0;
+                            if (
+                              event.finalHomeGoals !== null &&
+                              bet.pointsAwarded === 6 &&
+                              winCount > 0 &&
+                              bet.user.username.toLowerCase() !== "admin" &&
+                              totalDistributed > 0
+                            ) {
+                              wonCredit = Math.floor(totalDistributed / winCount);
+                            }
+
+                            return (
+                              <div
+                                key={bet.id}
+                                className={`rounded-lg border px-3 py-2 ${
+                                  isOwn
+                                    ? "border-purple-300 dark:border-purple-700 bg-purple-100 dark:bg-purple-900/40"
+                                    : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                                    {bet.user.username}
+                                    {isOwn ? " (Te)" : ""}
+                                  </p>
+                                  <p className="text-sm font-bold text-blue-900 dark:text-blue-200">
+                                    {bet.predictedHomeGoals} - {bet.predictedAwayGoals}
+                                  </p>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className={`inline-block rounded px-2 py-1 font-bold ${
+                                    bet.pointsAwarded === 0
+                                      ? "bg-red-50 text-red-900"
+                                      : bet.pointsAwarded <= 2
+                                        ? "bg-yellow-50 text-yellow-900"
+                                        : bet.pointsAwarded <= 4
+                                          ? "bg-blue-50 text-blue-900"
+                                          : "bg-purple-50 text-purple-900"
+                                  }`}>
+                                    Pont: {bet.pointsAwarded}
+                                  </span>
+                                  <span className="text-gray-700 dark:text-slate-300">
+                                    Nyeremény: {event.finalHomeGoals !== null ? wonCredit : "-"}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
