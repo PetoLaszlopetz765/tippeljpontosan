@@ -39,6 +39,18 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
 
     const body = await req.json();
     const { username, role, points, password } = body;
+    let validatedPoints: number | undefined = undefined;
+
+    if (points !== undefined) {
+      const parsed = Number(points);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        return NextResponse.json(
+          { message: "Érvénytelen pont érték" },
+          { status: 400 }
+        );
+      }
+      validatedPoints = Math.floor(parsed);
+    }
 
     // Check if username is taken by another user
     if (username) {
@@ -65,7 +77,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       data: {
         ...(username && { username }),
         ...(role && { role }),
-        ...(points !== undefined && { points }),
+        ...(validatedPoints !== undefined && { points: validatedPoints }),
         ...(hashedPassword && { password: hashedPassword }),
       },
       select: {

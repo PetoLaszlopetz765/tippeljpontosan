@@ -19,6 +19,7 @@ export default function AdminUsersPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", password: "", inviteCode: "", role: "USER" });
   const [creditEdit, setCreditEdit] = useState<{ [userId: string]: string }>({});
+  const [pointsEdit, setPointsEdit] = useState<{ [userId: string]: string }>({});
   const [passwordEdit, setPasswordEdit] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
@@ -96,6 +97,10 @@ export default function AdminUsersPage() {
     setCreditEdit((prev) => ({ ...prev, [userId]: value }));
   };
 
+  const handlePointsChange = (userId: string, value: string) => {
+    setPointsEdit((prev) => ({ ...prev, [userId]: value }));
+  };
+
   const handleCreditUpdate = async (userId: string) => {
     if (!token) return;
     const newCredit = creditEdit[userId];
@@ -147,6 +152,34 @@ export default function AdminUsersPage() {
       }
       setPasswordEdit((prev) => ({ ...prev, [userId]: "" }));
       alert("Jelszó sikeresen módosítva!");
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
+    }
+  };
+
+  const handlePointsUpdate = async (userId: string) => {
+    if (!token) return;
+    const newPoints = pointsEdit[userId];
+    if (newPoints === "" || isNaN(Number(newPoints)) || Number(newPoints) < 0) {
+      setError("Érvénytelen pont érték!");
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ points: Number(newPoints) }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba a pontszám módosításakor");
+      }
+      setPointsEdit((prev) => ({ ...prev, [userId]: "" }));
+      fetchUsers(token);
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
     }
@@ -225,6 +258,7 @@ export default function AdminUsersPage() {
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Felhasználónév</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Szerep</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Pont (Új érték)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit (Új érték)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
@@ -232,13 +266,26 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {Array.isArray(users) && users.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
+                  <tr><td colSpan={7} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
                 ) : (Array.isArray(users) && users.length > 0 ? (
                   users.map(user => (
                     <tr key={user.id} className="border-t border-gray-100 hover:bg-blue-50">
                       <td className="py-2 px-3 font-semibold text-gray-900">{user.username}</td>
                       <td className="py-2 px-3 text-blue-800 font-bold">{user.role}</td>
                       <td className="py-2 px-3 text-gray-900">{typeof user.points === 'number' ? user.points : '-'}</td>
+                      <td className="py-2 px-3">
+                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handlePointsUpdate(user.id); }}>
+                          <input
+                            type="number"
+                            value={pointsEdit[user.id] || ""}
+                            onChange={e => handlePointsChange(user.id, e.target.value)}
+                            min="0"
+                            className="border border-amber-300 rounded-xl px-2 py-1 w-24 text-gray-900 bg-white shadow-sm"
+                            placeholder="Pl: 10"
+                          />
+                          <button type="submit" className="bg-amber-700 hover:bg-amber-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
+                        </form>
+                      </td>
                       <td className="py-2 px-3">
                         <span className="font-mono text-base text-gray-900">{user.credits}</span>
                       </td>
@@ -319,6 +366,22 @@ export default function AdminUsersPage() {
                     <span className="text-gray-700">Kredit:</span>
                     <span className="font-mono font-bold text-gray-900">{user.credits}</span>
                   </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={pointsEdit[user.id] || ""}
+                        onChange={e => handlePointsChange(user.id, e.target.value)}
+                        min="0"
+                        className="flex-1 border border-amber-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
+                        placeholder="Pont (pl: 10)"
+                      />
+                      <button
+                        onClick={() => handlePointsUpdate(user.id)}
+                        className="bg-amber-700 hover:bg-amber-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
+                      >
+                        Pont
+                      </button>
+                    </div>
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
