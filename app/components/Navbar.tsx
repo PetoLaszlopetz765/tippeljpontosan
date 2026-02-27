@@ -167,6 +167,9 @@ export default function Navbar() {
               <Link href="/esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold">
                 Mai események
               </Link>
+              <Link href="/tegnapi-esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold">
+                Tegnapi események
+              </Link>
               <Link href="/chat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold">
                 💬 Chat
               </Link>
@@ -193,6 +196,9 @@ export default function Navbar() {
               </Link>
               <Link href="/esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
                 Mai események
+              </Link>
+              <Link href="/tegnapi-esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
+                Tegnapi események
               </Link>
               <Link href="/chat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
                 Chat
@@ -269,6 +275,9 @@ export default function Navbar() {
                 <Link href="/esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   Mai események
                 </Link>
+                <Link href="/tegnapi-esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  Tegnapi események
+                </Link>
                 <Link href="/chat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   💬 Chat
                 </Link>
@@ -295,6 +304,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
                   Mai események
+                </Link>
+                <Link href="/tegnapi-esemenyek" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Tegnapi események
                 </Link>
                 <Link href="/chat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
                   Chat

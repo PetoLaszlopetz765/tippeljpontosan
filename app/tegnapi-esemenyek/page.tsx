@@ -37,24 +37,21 @@ type EventItem = {
   } | null;
 };
 
-export default function EsemenyekPage() {
+export default function TegnapiEsemenyekPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [myBets, setMyBets] = useState<UserBet[]>([]);
   const [allVisibleBets, setAllVisibleBets] = useState<VisibleBet[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     const storedUserId = sessionStorage.getItem("userId");
-    const storedRole = sessionStorage.getItem("role");
 
     if (storedUserId) {
       setCurrentUserId(Number(storedUserId));
     }
-    setIsAdmin((storedRole || "").toUpperCase() === "ADMIN");
 
     if (!token) {
       window.location.href = "/login";
@@ -102,19 +99,18 @@ export default function EsemenyekPage() {
     loadData();
   }, []);
 
-  const todayEvents = useMemo(() => {
+  const yesterdayEvents = useMemo(() => {
     const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
 
     const isSameSystemDay = (date: Date) =>
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth() &&
-      date.getDate() === now.getDate();
+      date.getFullYear() === yesterday.getFullYear() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getDate() === yesterday.getDate();
 
     return events
-      .filter(
-        (event) =>
-          isSameSystemDay(new Date(event.kickoffTime))
-      )
+      .filter((event) => isSameSystemDay(new Date(event.kickoffTime)))
       .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime());
   }, [events]);
 
@@ -126,8 +122,10 @@ export default function EsemenyekPage() {
     <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-3 sm:px-4 py-6 sm:py-10">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100">📅 Mai események</h1>
-          <p className="text-gray-700 dark:text-slate-300 mt-2 text-sm sm:text-base">Csak a rendszeridő szerinti mai nap eseményei.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100">🗓️ Tegnapi események</h1>
+          <p className="text-gray-700 dark:text-slate-300 mt-2 text-sm sm:text-base">
+            A tegnapi nap eseményei az összes felhasználó tippjével.
+          </p>
         </div>
 
         {loading ? (
@@ -138,17 +136,16 @@ export default function EsemenyekPage() {
           <div className="bg-red-50 rounded-2xl border border-red-200 shadow-sm p-6 text-center text-red-700 font-semibold">
             {error}
           </div>
-        ) : todayEvents.length === 0 ? (
+        ) : yesterdayEvents.length === 0 ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-6 text-center text-gray-700 dark:text-slate-300">
-            Ma nincs megjeleníthető esemény.
+            Tegnapra nincs megjeleníthető esemény.
           </div>
         ) : (
           <div className="grid gap-4 sm:gap-5">
-            {todayEvents.map((event) => {
+            {yesterdayEvents.map((event) => {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
               const eventBets = allVisibleBets.filter((bet) => bet.eventId === event.id);
-              const canSeeAllBets = isAdmin || Boolean(myBet);
 
               return (
                 <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm p-4 sm:p-5">
@@ -202,17 +199,13 @@ export default function EsemenyekPage() {
                         {myBet.predictedHomeGoals} – {myBet.predictedAwayGoals}
                       </p>
                     ) : (
-                      <p className="font-semibold text-gray-700 dark:text-slate-300">Erre az eseményre még nem tippeltél.</p>
+                      <p className="font-semibold text-gray-700 dark:text-slate-300">Erre az eseményre nem tippeltél.</p>
                     )}
                   </div>
 
                   <div className="mt-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 p-3">
                     <p className="text-xs text-blue-700 dark:text-blue-200 mb-2">Összes tipp erre az eseményre</p>
-                    {!canSeeAllBets ? (
-                      <p className="font-semibold text-gray-700 dark:text-slate-300">
-                        Mások tippjeit akkor látod, ha már tippeltél erre az eseményre.
-                      </p>
-                    ) : eventBets.length === 0 ? (
+                    {eventBets.length === 0 ? (
                       <p className="font-semibold text-gray-700 dark:text-slate-300">Még nincs leadott tipp.</p>
                     ) : (
                       <div className="grid gap-2">
@@ -223,7 +216,9 @@ export default function EsemenyekPage() {
                             <div
                               key={bet.id}
                               className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
-                                isOwn ? "border-purple-300 dark:border-purple-700 bg-purple-100 dark:bg-purple-900/40" : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800"
+                                isOwn
+                                  ? "border-purple-300 dark:border-purple-700 bg-purple-100 dark:bg-purple-900/40"
+                                  : "border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800"
                               }`}
                             >
                               <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
