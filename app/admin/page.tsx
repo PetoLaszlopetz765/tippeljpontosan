@@ -12,6 +12,8 @@ export default function AdminPage() {
   const [hardResetPassword, setHardResetPassword] = useState("");
   const [hardResetLoading, setHardResetLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -100,6 +102,37 @@ export default function AdminPage() {
     }
   };
 
+  const handleImport = async () => {
+    if (!token || !importFile) return;
+    setError(null);
+    setImportLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+
+      const res = await fetch("/api/admin/import", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Hiba import közben");
+      }
+
+      alert(`Import sikeres.\n\nRészletek:\n${JSON.stringify(data.stats || {}, null, 2)}`);
+      setImportFile(null);
+      await fetchPool();
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen import hiba");
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   // Meghívókód logika külön oldalon, nincs több loadInviteCodes
 
   if (!isClient) {
@@ -175,6 +208,29 @@ export default function AdminPage() {
               }`}
             >
               {exportLoading ? "Export folyamatban..." : "Excel export letöltése"}
+            </button>
+          </div>
+
+          {/* Adat import */}
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-300 p-8">
+            <h2 className="text-xl font-extrabold text-amber-800 mb-4">📥 Adat import (Excel)</h2>
+            <p className="text-gray-700 mb-4">
+              Korábban exportált .xlsx fájl visszatöltése. A meglévő sorokat frissíti, a hiányzókat létrehozza.
+            </p>
+            <input
+              type="file"
+              accept=".xlsx"
+              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mb-3"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importLoading || !importFile}
+              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
+                importLoading || !importFile ? "bg-amber-400 cursor-not-allowed" : "bg-amber-700 hover:bg-amber-800"
+              }`}
+            >
+              {importLoading ? "Import folyamatban..." : "Excel import indítása"}
             </button>
           </div>
 
