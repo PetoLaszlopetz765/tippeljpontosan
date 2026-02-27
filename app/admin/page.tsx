@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [hardResetPassword, setHardResetPassword] = useState("");
   const [hardResetLoading, setHardResetLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -63,6 +64,39 @@ export default function AdminPage() {
       await fetchPool();
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
+    }
+  };
+
+  const handleExport = async () => {
+    if (!token) return;
+    setError(null);
+    setExportLoading(true);
+    try {
+      const res = await fetch("/api/admin/export", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba export közben");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sportfogadas-backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen export hiba");
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -127,6 +161,23 @@ export default function AdminPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Adat export */}
+          <div className="bg-white rounded-2xl shadow-sm border border-indigo-300 p-8">
+            <h2 className="text-xl font-extrabold text-indigo-800 mb-4">📤 Adat export (Excel)</h2>
+            <p className="text-gray-700 mb-4">
+              Letölti a fő táblák teljes tartalmát egy .xlsx fájlba (Setting, User, InviteCode, Event, Bet, CreditPool, DailyPool, ChatMessage).
+            </p>
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
+                exportLoading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-700 hover:bg-indigo-800"
+              }`}
+            >
+              {exportLoading ? "Export folyamatban..." : "Excel export letöltése"}
+            </button>
+          </div>
+
           {/* Pool kezelés */}
           <div className="bg-white rounded-2xl shadow-sm border border-green-300 p-8">
             <h2 className="text-xl font-extrabold text-green-800 mb-4">💰 Pool Kredit Kezelés</h2>
