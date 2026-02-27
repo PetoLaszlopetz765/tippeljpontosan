@@ -37,10 +37,21 @@ type EventItem = {
   } | null;
 };
 
+type LeaderboardUser = {
+  id: number;
+  username: string;
+  points: number;
+  credits: number;
+  role: string;
+  tipsCount: number;
+  perfectCount: number;
+};
+
 export default function EsemenyekPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [myBets, setMyBets] = useState<UserBet[]>([]);
   const [allVisibleBets, setAllVisibleBets] = useState<VisibleBet[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,7 +74,7 @@ export default function EsemenyekPage() {
 
     async function loadData() {
       try {
-        const [eventsRes, myBetsRes, allVisibleRes] = await Promise.all([
+        const [eventsRes, myBetsRes, allVisibleRes, leaderboardRes] = await Promise.all([
           fetch("/api/events", { cache: "no-store" }),
           fetch("/api/bets/my-bets", {
             headers: { Authorization: `Bearer ${token}` },
@@ -73,6 +84,7 @@ export default function EsemenyekPage() {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           }),
+          fetch("/api/leaderboard", { cache: "no-store" }),
         ]);
 
         if (!eventsRes.ok) {
@@ -91,6 +103,11 @@ export default function EsemenyekPage() {
         if (allVisibleRes.ok) {
           const visibleData = (await allVisibleRes.json()) as { bets: VisibleBet[] };
           setAllVisibleBets(visibleData?.bets || []);
+        }
+
+        if (leaderboardRes.ok) {
+          const leaderboardData = (await leaderboardRes.json()) as LeaderboardUser[];
+          setLeaderboard(leaderboardData || []);
         }
       } catch {
         setError("Hálózati hiba történt.");
@@ -121,6 +138,62 @@ export default function EsemenyekPage() {
   const myBetsByEventId = useMemo(() => {
     return new Map(myBets.map((bet) => [bet.eventId, bet]));
   }, [myBets]);
+
+  const userStatsMap = useMemo(() => {
+    const filteredUsers = leaderboard
+      .filter((user) => user.role !== "ADMIN")
+      .slice();
+
+    const eventIdSet = new Set(todayEvents.map((event) => event.id));
+    const periodPointsByUser = new Map<number, number>();
+
+    allVisibleBets.forEach((bet) => {
+      if (!eventIdSet.has(bet.eventId)) return;
+      periodPointsByUser.set(bet.userId, (periodPointsByUser.get(bet.userId) || 0) + (bet.pointsAwarded || 0));
+    });
+
+    const sortUsers = (users: Array<LeaderboardUser & { computedPoints: number }>) =>
+      users.sort((a, b) => {
+        if (b.computedPoints !== a.computedPoints) return b.computedPoints - a.computedPoints;
+        if (b.credits !== a.credits) return b.credits - a.credits;
+        if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+        return a.username.localeCompare(b.username);
+      });
+
+    const currentSorted = sortUsers(
+      filteredUsers.map((user) => ({ ...user, computedPoints: user.points }))
+    );
+    const previousSorted = sortUsers(
+      filteredUsers.map((user) => ({
+        ...user,
+        computedPoints: user.points - (periodPointsByUser.get(user.id) || 0),
+      }))
+    );
+
+    const currentRankMap = new Map<number, number>();
+    const previousRankMap = new Map<number, number>();
+
+    currentSorted.forEach((user, index) => currentRankMap.set(user.id, index + 1));
+    previousSorted.forEach((user, index) => previousRankMap.set(user.id, index + 1));
+
+    const result = new Map<number, {
+      rank: number;
+      prevRank: number;
+      points: number;
+      credits: number;
+    }>();
+
+    filteredUsers.forEach((user) => {
+      result.set(user.id, {
+        rank: currentRankMap.get(user.id) || 0,
+        prevRank: previousRankMap.get(user.id) || 0,
+        points: user.points,
+        credits: user.credits,
+      });
+    });
+
+    return result;
+  }, [leaderboard, todayEvents, allVisibleBets]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-3 sm:px-4 py-6 sm:py-10">
@@ -218,6 +291,14 @@ export default function EsemenyekPage() {
                       <div className="grid gap-2">
                         {eventBets.map((bet) => {
                           const isOwn = currentUserId !== null && bet.userId === currentUserId;
+                          const userStats = userStatsMap.get(bet.userId);
+                          const movement = userStats
+                            ? userStats.prevRank > userStats.rank
+                              ? "up"
+                              : userStats.prevRank < userStats.rank
+                                ? "down"
+                                : "same"
+                            : "same";
 
                           return (
                             <div
@@ -229,6 +310,18 @@ export default function EsemenyekPage() {
                               <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                                 {bet.user.username}
                                 {isOwn ? " (Te)" : ""}
+                                {userStats && (
+                                  <span className="ml-2 text-xs font-medium text-gray-600 dark:text-slate-300">
+                                    • #{userStats.rank} • {userStats.points} pont • {userStats.credits} kredit{" "}
+                                    {movement === "up" ? (
+                                      <span className="text-red-600 dark:text-red-400">⬆</span>
+                                    ) : movement === "down" ? (
+                                      <span className="text-red-600 dark:text-red-400">⬇</span>
+                                    ) : (
+                                      <span className="text-yellow-500">●</span>
+                                    )}
+                                  </span>
+                                )}
                               </p>
                               <p className="text-sm font-bold text-blue-900 dark:text-blue-200">
                                 {bet.predictedHomeGoals} - {bet.predictedAwayGoals}
