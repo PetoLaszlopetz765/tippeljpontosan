@@ -8,6 +8,8 @@ export default function AdminPage() {
   const [isClient, setIsClient] = useState(false);
   const [pool, setPool] = useState({ totalDaily: 0, totalChampionship: 0 });
   const [poolEdit, setPoolEdit] = useState({ totalDaily: "", totalChampionship: "" });
+  const [initialCredits, setInitialCredits] = useState(0);
+  const [initialCreditsEdit, setInitialCreditsEdit] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [hardResetPassword, setHardResetPassword] = useState("");
   const [hardResetLoading, setHardResetLoading] = useState(false);
@@ -29,6 +31,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (token && isClient) {
       fetchPool();
+      fetchInitialCredits();
     }
   }, [token, isClient]);
 
@@ -64,6 +67,50 @@ export default function AdminPage() {
         throw new Error(errData.message || "Hiba a pool módosításakor");
       }
       await fetchPool();
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
+    }
+  };
+
+  const fetchInitialCredits = async () => {
+    try {
+      const res = await fetch("/api/settings/initial-credits", { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const value = Number(data?.initialCredits) || 0;
+      setInitialCredits(value);
+      setInitialCreditsEdit(value);
+    } catch {
+      setInitialCredits(0);
+      setInitialCreditsEdit(0);
+    }
+  };
+
+  const handleInitialCreditsUpdate = async () => {
+    if (!token) return;
+    setError(null);
+
+    if (!Number.isFinite(initialCreditsEdit) || initialCreditsEdit < 0) {
+      setError("A kezdő kredit értéke nem lehet negatív.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/settings/initial-credits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ value: initialCreditsEdit }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba a kezdő kredit mentésekor");
+      }
+
+      await fetchInitialCredits();
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
     }
@@ -268,6 +315,34 @@ export default function AdminPage() {
               <p className="text-sm text-gray-600">
                 Jelenlegi: Napi {pool.totalDaily} kredit | Bajnoki {pool.totalChampionship} kredit
               </p>
+            </div>
+          </div>
+
+          {/* Kezdő kredit beállítás */}
+          <div className="bg-white rounded-2xl shadow-sm border border-emerald-300 p-8">
+            <h2 className="text-xl font-extrabold text-emerald-800 mb-4">🪙 Kezdő kredit (regisztrációhoz)</h2>
+            <p className="text-gray-700 mb-4">
+              Ezt az összeget kapja minden új felhasználó a regisztrációkor.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-900">Kezdő kredit</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={initialCreditsEdit}
+                  onChange={(e) => setInitialCreditsEdit(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mt-1"
+                  placeholder="0"
+                />
+              </div>
+              <button
+                onClick={handleInitialCreditsUpdate}
+                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 rounded-xl shadow"
+              >
+                Mentés
+              </button>
+              <p className="text-sm text-gray-600">Jelenlegi kezdő kredit: {initialCredits}</p>
             </div>
           </div>
 
