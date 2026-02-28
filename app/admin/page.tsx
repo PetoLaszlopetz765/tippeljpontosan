@@ -9,7 +9,7 @@ export default function AdminPage() {
   const [pool, setPool] = useState({ totalDaily: 0, totalChampionship: 0 });
   const [poolEdit, setPoolEdit] = useState({ totalDaily: "", totalChampionship: "" });
   const [initialCredits, setInitialCredits] = useState(0);
-  const [initialCreditsEdit, setInitialCreditsEdit] = useState(0);
+  const [initialCreditsEdit, setInitialCreditsEdit] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [hardResetPassword, setHardResetPassword] = useState("");
   const [hardResetLoading, setHardResetLoading] = useState(false);
@@ -79,10 +79,10 @@ export default function AdminPage() {
       const data = await res.json();
       const value = Number(data?.initialCredits) || 0;
       setInitialCredits(value);
-      setInitialCreditsEdit(value);
+      setInitialCreditsEdit(String(value));
     } catch {
       setInitialCredits(0);
-      setInitialCreditsEdit(0);
+      setInitialCreditsEdit("0");
     }
   };
 
@@ -90,7 +90,9 @@ export default function AdminPage() {
     if (!token) return;
     setError(null);
 
-    if (!Number.isFinite(initialCreditsEdit) || initialCreditsEdit < 0) {
+    const parsedValue = Number(initialCreditsEdit);
+
+    if (initialCreditsEdit.trim() === "" || !Number.isFinite(parsedValue) || parsedValue < 0) {
       setError("A kezdő kredit értéke nem lehet negatív.");
       return;
     }
@@ -102,7 +104,7 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ value: initialCreditsEdit }),
+        body: JSON.stringify({ value: parsedValue }),
       });
 
       if (!res.ok) {
@@ -331,7 +333,8 @@ export default function AdminPage() {
                   type="number"
                   min={0}
                   value={initialCreditsEdit}
-                  onChange={(e) => setInitialCreditsEdit(Math.max(0, Number(e.target.value) || 0))}
+                  onChange={(e) => setInitialCreditsEdit(e.target.value.replace(/[^0-9]/g, ""))}
+                  onFocus={(e) => e.target.select()}
                   className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mt-1"
                   placeholder="0"
                 />
