@@ -90,14 +90,30 @@ export default function TippelesPage() {
     [events]
   );
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function reloadUserBets(token: string) {
+    const betsRes = await fetch("/api/bets/my-bets", {
+      headers: { "Authorization": `Bearer ${token}` },
+      cache: "no-store"
+    });
+    if (betsRes.ok) {
+      const data = await betsRes.json();
+      const betsMap: Record<number, BetInput> = {};
+      data.forEach((bet: BetWithEventId) => {
+        betsMap[bet.eventId] = {
+          predictedHomeGoals: bet.predictedHomeGoals,
+          predictedAwayGoals: bet.predictedAwayGoals,
+        };
+      });
+      setUserBets(betsMap);
+    }
+  }
+
+  async function submitBets(payload: Array<{ eventId: number; predictedHomeGoals: number; predictedAwayGoals: number }>) {
     if (submitting) return;
 
     setMessage("");
     setSubmitting(true);
 
-    // Check session token before submit
     const token = sessionStorage.getItem("token");
     if (!token) {
       setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
@@ -106,15 +122,8 @@ export default function TippelesPage() {
       return;
     }
 
-    // csak nyitott meccsek tippjeit küldjük
-    const openIds = new Set(events.filter((e) => isEventOpen(e.status)).map((e) => e.id));
-
-    const payload = Object.entries(bets)
-      .map(([eventId, bet]) => ({ eventId: Number(eventId), ...bet }))
-      .filter((x: { eventId: number }) => openIds.has(x.eventId));
-
     if (payload.length === 0) {
-      setMessage("⚠️ Minden nyitott eseményre tippeltél már! ⚠️");
+      setMessage("⚠️ Adj meg legalább egy tippet a leadáshoz! ⚠️");
       setSubmitting(false);
       return;
     }
@@ -122,7 +131,7 @@ export default function TippelesPage() {
     try {
       const res = await fetch("/api/bets", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
@@ -132,28 +141,8 @@ export default function TippelesPage() {
       if (res.ok) {
         const data = await res.json();
         setMessage(data.message || "✅ Tipp(ek) sikeresen leadva!");
-        setBets({}); // Töröljük a form mezőket
-
-        // Felhasználó tippjeit újratöltjük
-        setTimeout(async () => {
-          const betsRes = await fetch("/api/bets/my-bets", {
-            headers: { "Authorization": `Bearer ${token}` },
-            cache: "no-store"
-          });
-          if (betsRes.ok) {
-            const data = await betsRes.json();
-            const betsMap: Record<number, BetInput> = {};
-            data.forEach((bet: any) => {
-              betsMap[bet.eventId] = {
-                predictedHomeGoals: bet.predictedHomeGoals,
-                predictedAwayGoals: bet.predictedAwayGoals,
-              };
-            });
-            setUserBets(betsMap);
-          }
-        }, 500);
-
-        // ÚJ: Értesítjük a verseny oldalt, hogy frissítse a tippeket és az events pool adatokat
+        setBets({});
+        await reloadUserBets(token);
         localStorage.setItem("refreshBets", Date.now().toString());
         localStorage.setItem("refreshEvents", Date.now().toString());
       } else {
@@ -165,6 +154,40 @@ export default function TippelesPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    // csak nyitott meccsek tippjeit küldjük
+    const openIds = new Set(events.filter((e) => isEventOpen(e.status)).map((e) => e.id));
+
+    const payload = Object.entries(bets)
+      .map(([eventId, bet]) => ({ eventId: Number(eventId), ...bet }))
+      .filter((x: { eventId: number }) => openIds.has(x.eventId));
+
+    if (payload.length === 0) {
+      setMessage("⚠️ Minden nyitott eseményre tippeltél már! ⚠️");
+      return;
+    }
+
+    await submitBets(payload);
+  }
+
+  async function handleSingleSubmit(eventId: number) {
+    const event = events.find((currentEvent) => currentEvent.id === eventId);
+    if (!event || !isEventOpen(event.status)) {
+      setMessage("⚠️ Erre az eseményre már nem lehet tippelni.");
+      return;
+    }
+
+    const currentBet = bets[eventId];
+    if (!currentBet) {
+      setMessage("⚠️ Adj meg tippet ehhez az eseményhez, majd próbáld újra.");
+      return;
+    }
+
+    await submitBets([{ eventId, ...currentBet }]);
   }
 
   return (
@@ -284,6 +307,23 @@ export default function TippelesPage() {
                     <p className="text-sm font-semibold text-blue-800">
                       ✓ Te már tippeltél erre a meccsre. Több tipp leadása nem lehetséges.
                     </p>
+                  </div>
+                )}
+
+                {open && !hasUserBet && (
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleSingleSubmit(event.id)}
+                      disabled={submitting}
+                      className={`h-10 rounded-xl text-white font-bold px-5 shadow transition ${
+                        submitting
+                          ? "bg-green-400 cursor-not-allowed"
+                          : "bg-green-700 hover:bg-green-800 active:bg-green-900"
+                      }`}
+                    >
+                      {submitting ? "Küldés..." : "Esemény tipp leadása"}
+                    </button>
                   </div>
                 )}
               </div>
