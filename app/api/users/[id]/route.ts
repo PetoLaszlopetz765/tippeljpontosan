@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     const userId = parseInt(params.id);
 
     const body = await req.json();
-    const { username, role, points, password, tipsCountAdjustment, perfectCountAdjustment } = body;
+    const { username, role, points, password, tipsCountAdjustment, perfectCountAdjustment, targetTipsCount, targetPerfectCount } = body;
     let validatedPoints: number | undefined = undefined;
     let validatedTipsCountAdjustment: number | undefined = undefined;
     let validatedPerfectCountAdjustment: number | undefined = undefined;
@@ -74,6 +74,35 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         );
       }
       validatedPerfectCountAdjustment = Math.trunc(parsed);
+    }
+
+    if (targetTipsCount !== undefined || targetPerfectCount !== undefined) {
+      const [baseTipsCount, basePerfectCount] = await Promise.all([
+        prisma.bet.count({ where: { userId } }),
+        prisma.bet.count({ where: { userId, pointsAwarded: 6 } }),
+      ]);
+
+      if (targetTipsCount !== undefined) {
+        const parsedTargetTips = Number(targetTipsCount);
+        if (!Number.isFinite(parsedTargetTips) || parsedTargetTips < 0) {
+          return NextResponse.json(
+            { message: "Érvénytelen cél összes tipp érték" },
+            { status: 400 }
+          );
+        }
+        validatedTipsCountAdjustment = Math.trunc(parsedTargetTips) - baseTipsCount;
+      }
+
+      if (targetPerfectCount !== undefined) {
+        const parsedTargetPerfect = Number(targetPerfectCount);
+        if (!Number.isFinite(parsedTargetPerfect) || parsedTargetPerfect < 0) {
+          return NextResponse.json(
+            { message: "Érvénytelen cél telitalálat érték" },
+            { status: 400 }
+          );
+        }
+        validatedPerfectCountAdjustment = Math.trunc(parsedTargetPerfect) - basePerfectCount;
+      }
     }
 
     // Check if username is taken by another user

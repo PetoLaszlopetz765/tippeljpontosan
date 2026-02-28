@@ -26,8 +26,8 @@ export default function AdminUsersPage() {
   const [newUser, setNewUser] = useState({ username: "", password: "", inviteCode: "", role: "USER" });
   const [creditEdit, setCreditEdit] = useState<{ [userId: string]: string }>({});
   const [pointsEdit, setPointsEdit] = useState<{ [userId: string]: string }>({});
-  const [tipsCountAdjustmentEdit, setTipsCountAdjustmentEdit] = useState<{ [userId: string]: string }>({});
-  const [perfectCountAdjustmentEdit, setPerfectCountAdjustmentEdit] = useState<{ [userId: string]: string }>({});
+  const [tipsCountTargetEdit, setTipsCountTargetEdit] = useState<{ [userId: string]: string }>({});
+  const [perfectCountTargetEdit, setPerfectCountTargetEdit] = useState<{ [userId: string]: string }>({});
   const [passwordEdit, setPasswordEdit] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
@@ -109,12 +109,12 @@ export default function AdminUsersPage() {
     setPointsEdit((prev) => ({ ...prev, [userId]: value }));
   };
 
-  const handleTipsCountAdjustmentChange = (userId: string, value: string) => {
-    setTipsCountAdjustmentEdit((prev) => ({ ...prev, [userId]: value }));
+  const handleTipsCountTargetChange = (userId: string, value: string) => {
+    setTipsCountTargetEdit((prev) => ({ ...prev, [userId]: value }));
   };
 
-  const handlePerfectCountAdjustmentChange = (userId: string, value: string) => {
-    setPerfectCountAdjustmentEdit((prev) => ({ ...prev, [userId]: value }));
+  const handlePerfectCountTargetChange = (userId: string, value: string) => {
+    setPerfectCountTargetEdit((prev) => ({ ...prev, [userId]: value }));
   };
 
   const handleCreditUpdate = async (userId: string) => {
@@ -201,11 +201,11 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleTipsCountAdjustmentUpdate = async (userId: string) => {
+  const handleTipsCountTargetUpdate = async (userId: string) => {
     if (!token) return;
-    const newValue = tipsCountAdjustmentEdit[userId];
-    if (newValue === "" || isNaN(Number(newValue))) {
-      setError("Érvénytelen összes tipp korrekció!");
+    const newValue = tipsCountTargetEdit[userId];
+    if (newValue === "" || isNaN(Number(newValue)) || Number(newValue) < 0) {
+      setError("Érvénytelen összes tipp érték!");
       return;
     }
     setError(null);
@@ -216,24 +216,24 @@ export default function AdminUsersPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ tipsCountAdjustment: Number(newValue) }),
+        body: JSON.stringify({ targetTipsCount: Number(newValue) }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Hiba az összes tipp korrekció mentésekor");
+        throw new Error(errData.message || "Hiba az összes tipp mentésekor");
       }
-      setTipsCountAdjustmentEdit((prev) => ({ ...prev, [userId]: "" }));
+      setTipsCountTargetEdit((prev) => ({ ...prev, [userId]: "" }));
       fetchUsers(token);
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
     }
   };
 
-  const handlePerfectCountAdjustmentUpdate = async (userId: string) => {
+  const handlePerfectCountTargetUpdate = async (userId: string) => {
     if (!token) return;
-    const newValue = perfectCountAdjustmentEdit[userId];
-    if (newValue === "" || isNaN(Number(newValue))) {
-      setError("Érvénytelen telitalálat korrekció!");
+    const newValue = perfectCountTargetEdit[userId];
+    if (newValue === "" || isNaN(Number(newValue)) || Number(newValue) < 0) {
+      setError("Érvénytelen telitalálat érték!");
       return;
     }
     setError(null);
@@ -244,13 +244,13 @@ export default function AdminUsersPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ perfectCountAdjustment: Number(newValue) }),
+        body: JSON.stringify({ targetPerfectCount: Number(newValue) }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Hiba a telitalálat korrekció mentésekor");
+        throw new Error(errData.message || "Hiba a telitalálat mentésekor");
       }
-      setPerfectCountAdjustmentEdit((prev) => ({ ...prev, [userId]: "" }));
+      setPerfectCountTargetEdit((prev) => ({ ...prev, [userId]: "" }));
       fetchUsers(token);
     } catch (err: any) {
       setError(err.message || "Ismeretlen hiba");
@@ -332,9 +332,9 @@ export default function AdminUsersPage() {
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Pont (Új érték)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Összes tipp</th>
-                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Tipp korrekció</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Összes tipp (új cél)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Telitalálat</th>
-                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Telitalálat korrekció</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Telitalálat (új cél)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit (Új érték)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
@@ -366,13 +366,14 @@ export default function AdminUsersPage() {
                         {typeof user.finalTipsCount === "number" ? user.finalTipsCount : (typeof user.tipsCount === "number" ? user.tipsCount : "-")}
                       </td>
                       <td className="py-2 px-3">
-                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handleTipsCountAdjustmentUpdate(user.id); }}>
+                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handleTipsCountTargetUpdate(user.id); }}>
                           <input
                             type="number"
-                            value={tipsCountAdjustmentEdit[user.id] || ""}
-                            onChange={e => handleTipsCountAdjustmentChange(user.id, e.target.value)}
+                            value={tipsCountTargetEdit[user.id] || ""}
+                            onChange={e => handleTipsCountTargetChange(user.id, e.target.value)}
+                            min="0"
                             className="border border-cyan-300 rounded-xl px-2 py-1 w-24 text-gray-900 bg-white shadow-sm"
-                            placeholder={`Akt: ${user.tipsCountAdjustment ?? 0}`}
+                            placeholder={`Akt: ${typeof user.finalTipsCount === "number" ? user.finalTipsCount : (typeof user.tipsCount === "number" ? user.tipsCount : 0)}`}
                           />
                           <button type="submit" className="bg-cyan-700 hover:bg-cyan-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
                         </form>
@@ -381,13 +382,14 @@ export default function AdminUsersPage() {
                         {typeof user.finalPerfectCount === "number" ? user.finalPerfectCount : (typeof user.perfectCount === "number" ? user.perfectCount : "-")}
                       </td>
                       <td className="py-2 px-3">
-                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handlePerfectCountAdjustmentUpdate(user.id); }}>
+                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handlePerfectCountTargetUpdate(user.id); }}>
                           <input
                             type="number"
-                            value={perfectCountAdjustmentEdit[user.id] || ""}
-                            onChange={e => handlePerfectCountAdjustmentChange(user.id, e.target.value)}
+                            value={perfectCountTargetEdit[user.id] || ""}
+                            onChange={e => handlePerfectCountTargetChange(user.id, e.target.value)}
+                            min="0"
                             className="border border-yellow-300 rounded-xl px-2 py-1 w-24 text-gray-900 bg-white shadow-sm"
-                            placeholder={`Akt: ${user.perfectCountAdjustment ?? 0}`}
+                            placeholder={`Akt: ${typeof user.finalPerfectCount === "number" ? user.finalPerfectCount : (typeof user.perfectCount === "number" ? user.perfectCount : 0)}`}
                           />
                           <button type="submit" className="bg-yellow-700 hover:bg-yellow-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
                         </form>
@@ -493,13 +495,14 @@ export default function AdminUsersPage() {
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        value={tipsCountAdjustmentEdit[user.id] || ""}
-                        onChange={e => handleTipsCountAdjustmentChange(user.id, e.target.value)}
+                        value={tipsCountTargetEdit[user.id] || ""}
+                        onChange={e => handleTipsCountTargetChange(user.id, e.target.value)}
+                        min="0"
                         className="flex-1 border border-cyan-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
-                        placeholder={`Összes tipp korrekció (akt: ${user.tipsCountAdjustment ?? 0})`}
+                        placeholder={`Összes tipp (akt: ${typeof user.finalTipsCount === 'number' ? user.finalTipsCount : (typeof user.tipsCount === 'number' ? user.tipsCount : 0)})`}
                       />
                       <button
-                        onClick={() => handleTipsCountAdjustmentUpdate(user.id)}
+                        onClick={() => handleTipsCountTargetUpdate(user.id)}
                         className="bg-cyan-700 hover:bg-cyan-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
                       >
                         Tippek
@@ -508,13 +511,14 @@ export default function AdminUsersPage() {
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        value={perfectCountAdjustmentEdit[user.id] || ""}
-                        onChange={e => handlePerfectCountAdjustmentChange(user.id, e.target.value)}
+                        value={perfectCountTargetEdit[user.id] || ""}
+                        onChange={e => handlePerfectCountTargetChange(user.id, e.target.value)}
+                        min="0"
                         className="flex-1 border border-yellow-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
-                        placeholder={`Telitalálat korrekció (akt: ${user.perfectCountAdjustment ?? 0})`}
+                        placeholder={`Telitalálat (akt: ${typeof user.finalPerfectCount === 'number' ? user.finalPerfectCount : (typeof user.perfectCount === 'number' ? user.perfectCount : 0)})`}
                       />
                       <button
-                        onClick={() => handlePerfectCountAdjustmentUpdate(user.id)}
+                        onClick={() => handlePerfectCountTargetUpdate(user.id)}
                         className="bg-yellow-700 hover:bg-yellow-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
                       >
                         Telitalálat
