@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
       creditPools,
       dailyPools,
       chatMessages,
-      betsForView,
     ] = await Promise.all([
       prisma.setting.findMany({ orderBy: { id: "asc" } }),
       prisma.user.findMany({ orderBy: { id: "asc" } }),
@@ -38,24 +37,6 @@ export async function GET(req: NextRequest) {
       prisma.creditPool.findMany({ orderBy: { id: "asc" } }),
       prisma.dailyPool.findMany({ orderBy: { id: "asc" } }),
       prisma.chatMessage.findMany({ orderBy: { id: "asc" } }),
-      prisma.bet.findMany({
-        include: {
-          user: {
-            select: {
-              username: true,
-            },
-          },
-          event: {
-            include: {
-              dailyPool: true,
-            },
-          },
-        },
-        orderBy: [
-          { event: { kickoffTime: "desc" } },
-          { user: { username: "asc" } },
-        ],
-      }),
     ]);
 
     const workbook = XLSX.utils.book_new();
@@ -65,77 +46,11 @@ export async function GET(req: NextRequest) {
       XLSX.utils.book_append_sheet(workbook, sheet, name);
     };
 
-    const allTipsViewRows = (() => {
-      const groupedByEvent = new Map<number, typeof betsForView>();
-      for (const bet of betsForView) {
-        if (!groupedByEvent.has(bet.eventId)) {
-          groupedByEvent.set(bet.eventId, [] as typeof betsForView);
-        }
-        groupedByEvent.get(bet.eventId)!.push(bet);
-      }
-
-      const rows: Array<Record<string, unknown>> = [];
-
-      for (const [eventId, eventBets] of groupedByEvent.entries()) {
-        const event = eventBets[0]?.event;
-        if (!event) continue;
-
-        const nonAdminBets = eventBets.filter(
-          (bet) => (bet.user?.username || "").toLowerCase() !== "admin"
-        );
-        const winners = nonAdminBets.filter((bet) => bet.pointsAwarded === 6);
-        const winnersCount = winners.length;
-        const totalDistributed = event.dailyPool?.totalDistributed || 0;
-
-        const resultText =
-          event.finalHomeGoals !== null && event.finalAwayGoals !== null
-            ? `${event.finalHomeGoals}-${event.finalAwayGoals}`
-            : "-";
-
-        const poolStateText = (() => {
-          const dailyPool = event.dailyPool;
-          if (!dailyPool) return "-";
-          const poolTotal = (dailyPool.totalDaily || 0) + (dailyPool.carriedFromPrevious || 0);
-          const distributed = dailyPool.totalDistributed || 0;
-          if (distributed > 0) return `Pool szétosztva: ${distributed}`;
-          if (poolTotal > 0) return `Pool halmozódik: ${poolTotal}`;
-          return "-";
-        })();
-
-        for (const bet of eventBets) {
-          const username = bet.user?.username || "ismeretlen";
-          const isEligibleWinner =
-            event.finalHomeGoals !== null &&
-            bet.pointsAwarded === 6 &&
-            winnersCount > 0 &&
-            username.toLowerCase() !== "admin" &&
-            totalDistributed > 0;
-          const wonCredit = isEligibleWinner ? Math.floor(totalDistributed / winnersCount) : (event.finalHomeGoals !== null ? 0 : "-");
-
-          rows.push({
-            eventId,
-            esemeny: `${event.homeTeam} - ${event.awayTeam}`,
-            kezdes: event.kickoffTime,
-            feltettKredit: event.creditCost,
-            vegeredmeny: resultText,
-            poolAllapot: poolStateText,
-            jatekos: username,
-            tipp: `${bet.predictedHomeGoals}-${bet.predictedAwayGoals}`,
-            pont: bet.pointsAwarded,
-            nyeremenyKredit: wonCredit,
-          });
-        }
-      }
-
-      return rows;
-    })();
-
     appendSheet("Setting", settings);
     appendSheet("User", users);
     appendSheet("InviteCode", inviteCodes);
     appendSheet("Event", events);
     appendSheet("Bet", bets);
-    appendSheet("OsszesTippekNezet", allTipsViewRows);
     appendSheet("CreditPool", creditPools);
     appendSheet("DailyPool", dailyPools);
     appendSheet("ChatMessage", chatMessages);

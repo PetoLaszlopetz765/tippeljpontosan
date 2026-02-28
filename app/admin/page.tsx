@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [hardResetPassword, setHardResetPassword] = useState("");
   const [hardResetLoading, setHardResetLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [allBetsExportLoading, setAllBetsExportLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -182,6 +183,39 @@ export default function AdminPage() {
     }
   };
 
+  const handleAllBetsViewExport = async () => {
+    if (!token) return;
+    setError(null);
+    setAllBetsExportLoading(true);
+    try {
+      const res = await fetch("/api/admin/export/all-bets-view", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba export közben");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sportfogadas-osszes-tippek-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen export hiba");
+    } finally {
+      setAllBetsExportLoading(false);
+    }
+  };
+
   // Meghívókód logika külön oldalon, nincs több loadInviteCodes
 
   if (!isClient) {
@@ -280,6 +314,23 @@ export default function AdminPage() {
               }`}
             >
               {importLoading ? "Import folyamatban..." : "Excel import indítása"}
+            </button>
+          </div>
+
+          {/* Összes tippek nézet export */}
+          <div className="bg-white rounded-2xl shadow-sm border border-cyan-300 p-8">
+            <h2 className="text-xl font-extrabold text-cyan-800 mb-4">📊 Összes tippek nézet export</h2>
+            <p className="text-gray-700 mb-4">
+              Külön .xlsx export az Összes tippek oldal felhasználói nézetéhez (esemény, tippek, pontok, nyeremény).
+            </p>
+            <button
+              onClick={handleAllBetsViewExport}
+              disabled={allBetsExportLoading}
+              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
+                allBetsExportLoading ? "bg-cyan-400 cursor-not-allowed" : "bg-cyan-700 hover:bg-cyan-800"
+              }`}
+            >
+              {allBetsExportLoading ? "Export folyamatban..." : "Összes tippek nézet export"}
             </button>
           </div>
 
