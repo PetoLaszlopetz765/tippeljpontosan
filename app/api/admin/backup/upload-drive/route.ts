@@ -5,6 +5,37 @@ import { Readable } from "stream";
 import { prisma } from "@/lib/db";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
+function buildDriveAuth() {
+  const oauthClientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const oauthClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const oauthRefreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+
+  if (oauthClientId && oauthClientSecret && oauthRefreshToken) {
+    const oauth2Client = new google.auth.OAuth2({
+      clientId: oauthClientId,
+      clientSecret: oauthClientSecret,
+    });
+
+    oauth2Client.setCredentials({ refresh_token: oauthRefreshToken });
+    return oauth2Client;
+  }
+
+  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const serviceAccountPrivateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+
+  if (!serviceAccountEmail || !serviceAccountPrivateKey) {
+    throw new Error(
+      "Hiányzó Google Drive auth konfiguráció. Add meg vagy az OAuth env-eket (GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REFRESH_TOKEN), vagy a service account env-eket (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY)."
+    );
+  }
+
+  return new google.auth.JWT({
+    email: serviceAccountEmail,
+    key: serviceAccountPrivateKey.replace(/\\n/g, "\n"),
+    scopes: ["https://www.googleapis.com/auth/drive"],
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
@@ -21,13 +52,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Csak admin!" }, { status: 403 });
     }
 
-    const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const serviceAccountPrivateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
     const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-    if (!serviceAccountEmail || !serviceAccountPrivateKey || !driveFolderId) {
+    if (!driveFolderId) {
       return NextResponse.json(
-        { message: "Hiányzó Google Drive konfiguráció (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY, GOOGLE_DRIVE_FOLDER_ID)." },
+        { message: "Hiányzó Google Drive konfiguráció: GOOGLE_DRIVE_FOLDER_ID." },
         { status: 500 }
       );
     }
@@ -63,11 +92,7 @@ export async function POST(req: NextRequest) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const fileName = `sportfogadas-backup-${timestamp}.xlsx`;
 
-    const auth = new google.auth.JWT({
-      email: serviceAccountEmail,
-      key: serviceAccountPrivateKey.replace(/\\n/g, "\n"),
-      scopes: ["https://www.googleapis.com/auth/drive"],
-    });
+    const auth = buildDriveAuth();
 
     const drive = google.drive({ version: "v3", auth });
 
