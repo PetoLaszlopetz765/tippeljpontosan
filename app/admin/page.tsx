@@ -350,19 +350,19 @@ export default function AdminPage() {
           </div>
 
           {/* Meghívókódok külön oldalra */}
-          <Link
-            href="/admin/invite-codes"
-            className="bg-white rounded-2xl shadow-sm border border-blue-300 p-8 mb-8 flex flex-col items-center hover:shadow-lg hover:border-purple-400 transition"
-          >
+          <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-8 mb-8 flex flex-col hover:shadow-lg hover:border-purple-400 transition">
             <h2 className="text-xl font-extrabold text-blue-800 mb-4">Meghívókódok kezelése</h2>
-            <span className="text-blue-700">Új kód generálás, másolás, lista</span>
-          </Link>
+            <p className="text-blue-700 mb-6">Új kód generálás, másolás, lista</p>
+            <Link
+              href="/admin/invite-codes"
+              className="inline-flex items-center justify-center w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl shadow"
+            >
+              Meghívókódok megnyitása
+            </Link>
+          </div>
 
           {/* Esemény kezelés */}
-          <Link
-            href="/admin/events"
-            className="group bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-blue-300 transition"
-          >
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-blue-300 transition">
             <div className="flex items-center gap-4 mb-4">
               <div className="text-5xl">📅</div>
               <h2 className="text-2xl font-extrabold text-gray-900">
@@ -372,17 +372,16 @@ export default function AdminPage() {
             <p className="text-gray-700 mb-6">
               Új eseményeket hozhatsz létre és az eredményeket felviheted.
             </p>
-            <div className="text-blue-600 font-semibold group-hover:text-blue-700 flex items-center gap-2">
-              Megnyitás
-              <span>→</span>
-            </div>
-          </Link>
+            <Link
+              href="/admin/events"
+              className="inline-flex items-center justify-center w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl shadow"
+            >
+              Események megnyitása
+            </Link>
+          </div>
 
           {/* Felhasználó kezelés */}
-          <Link
-            href="/admin/users"
-            className="group bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-purple-300 transition"
-          >
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-purple-300 transition">
             <div className="flex items-center gap-4 mb-4">
               <div className="text-5xl">👥</div>
               <h2 className="text-2xl font-extrabold text-gray-900">
@@ -392,11 +391,13 @@ export default function AdminPage() {
             <p className="text-gray-700 mb-6">
               Új felhasználókat hozhatsz létre és kezelheted azok szerepkörét.
             </p>
-            <div className="text-purple-600 font-semibold group-hover:text-purple-700 flex items-center gap-2">
-              Megnyitás
-              <span>→</span>
-            </div>
-          </Link>
+            <Link
+              href="/admin/users"
+              className="inline-flex items-center justify-center w-full sm:w-auto bg-purple-700 hover:bg-purple-800 text-white font-bold px-5 py-2 rounded-xl shadow"
+            >
+              Felhasználók megnyitása
+            </Link>
+          </div>
         </div>
 
         {/* Hard reset panel: legalul, extra védelemmel */}
