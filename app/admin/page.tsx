@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [hardResetPassword, setHardResetPassword] = useState("");
   const [hardResetLoading, setHardResetLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [driveBackupLoading, setDriveBackupLoading] = useState(false);
   const [allBetsExportLoading, setAllBetsExportLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -216,6 +217,32 @@ export default function AdminPage() {
     }
   };
 
+  const handleGoogleDriveBackupUpload = async () => {
+    if (!token) return;
+    setError(null);
+    setDriveBackupLoading(true);
+    try {
+      const res = await fetch("/api/admin/backup/upload-drive", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Hiba Google Drive feltöltés közben");
+      }
+
+      const uploadedName = data?.file?.name;
+      alert(uploadedName ? `Backup feltöltve Google Drive-ra: ${uploadedName}` : "Backup feltöltve Google Drive-ra.");
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen feltöltési hiba");
+    } finally {
+      setDriveBackupLoading(false);
+    }
+  };
+
   // Meghívókód logika külön oldalon, nincs több loadInviteCodes
 
   if (!isClient) {
@@ -314,6 +341,23 @@ export default function AdminPage() {
               }`}
             >
               {importLoading ? "Import folyamatban..." : "Excel import indítása"}
+            </button>
+          </div>
+
+          {/* Backup feltöltés Google Drive-ra */}
+          <div className="bg-white rounded-2xl shadow-sm border border-teal-300 p-8">
+            <h2 className="text-xl font-extrabold text-teal-800 mb-4">☁️ Backup feltöltés Google Drive-ra</h2>
+            <p className="text-gray-700 mb-4">
+              Az aktuális teljes backup .xlsx fájlt feltölti az előre beállított Google Drive mappába.
+            </p>
+            <button
+              onClick={handleGoogleDriveBackupUpload}
+              disabled={driveBackupLoading}
+              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
+                driveBackupLoading ? "bg-teal-400 cursor-not-allowed" : "bg-teal-700 hover:bg-teal-800"
+              }`}
+            >
+              {driveBackupLoading ? "Feltöltés folyamatban..." : "Backup feltöltés Drive-ra"}
             </button>
           </div>
 
