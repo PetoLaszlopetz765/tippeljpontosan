@@ -246,12 +246,12 @@ export default function TippelesPage() {
                       )}
                     </div>
 
-                    <div className="mt-2 flex items-center gap-2 text-sm">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                       <span className="text-gray-700">Kezdés:</span>
                       <span className="font-semibold text-gray-900">
                         {new Date(event.kickoffTime).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}
                       </span>
-                      <span className="ml-4 text-gray-700">Tippelés díja:</span>
+                      <span className="text-gray-700 sm:ml-4">Tippelés díja:</span>
                       <span className="font-semibold text-green-800">{event.creditCost} kredit</span>
                     </div>
                   </div>
@@ -311,12 +311,12 @@ export default function TippelesPage() {
                 )}
 
                 {open && !hasUserBet && (
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex justify-stretch sm:justify-end">
                     <button
                       type="button"
                       onClick={() => handleSingleSubmit(event.id)}
                       disabled={submitting}
-                      className={`h-10 rounded-xl text-white font-bold px-5 shadow transition ${
+                      className={`h-10 w-full sm:w-auto rounded-xl text-white font-bold px-5 shadow transition ${
                         submitting
                           ? "bg-green-400 cursor-not-allowed"
                           : "bg-green-700 hover:bg-green-800 active:bg-green-900"
