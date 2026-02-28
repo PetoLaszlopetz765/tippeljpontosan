@@ -37,63 +37,77 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
       );
     }
 
-    // Esemény lekérése
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-    });
-
-    if (!event) {
+    if (decoded.role !== "ADMIN") {
       return NextResponse.json(
-        { message: "Esemény nem található" },
-        { status: 404 }
+        { message: "Csak admin törölhet eseményt" },
+        { status: 403 }
       );
     }
 
-    // Összes tipp lekérése erre az eseményre
-    const allBets = await prisma.bet.findMany({
-      where: { eventId },
-    });
-
-    console.log(`Found ${allBets.length} bets for this event`);
-
-    // Felhasználók pontjainak frissítése (mivel törlünk tippeket)
-    const userIds = new Set(allBets.map(bet => bet.userId));
-    for (const userId of userIds) {
-      const totalPoints = await prisma.bet.aggregate({
-        where: { 
-          userId,
-          eventId: { not: eventId } // Except the bets we're about to delete
-        },
-        _sum: { pointsAwarded: true },
+    const deletedBetsCount = await prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({
+        where: { id: eventId },
       });
 
-      await prisma.user.update({
-        where: { id: userId },
-        data: { points: totalPoints._sum.pointsAwarded || 0 },
+      if (!event) {
+        throw new Error("EVENT_NOT_FOUND");
+      }
+
+      const allBets = await tx.bet.findMany({
+        where: { eventId },
       });
 
-      console.log(`Updated user ${userId} points`);
-    }
+      console.log(`Found ${allBets.length} bets for this event`);
 
-    // Összes tipp törlése erre az eseményre
-    await prisma.bet.deleteMany({
-      where: { eventId },
-    });
+      const refundByUser = new Map<number, number>();
+      for (const bet of allBets) {
+        refundByUser.set(bet.userId, (refundByUser.get(bet.userId) || 0) + (bet.creditSpent || 0));
+      }
 
-    console.log(`Deleted ${allBets.length} bets`);
+      await tx.bet.deleteMany({
+        where: { eventId },
+      });
 
-    // Esemény törlése
-    await prisma.event.delete({
-      where: { id: eventId },
+      await tx.dailyPool.deleteMany({
+        where: { eventId },
+      });
+
+      await tx.event.delete({
+        where: { id: eventId },
+      });
+
+      const userIds = Array.from(refundByUser.keys());
+      for (const userId of userIds) {
+        const totalPoints = await tx.bet.aggregate({
+          where: { userId },
+          _sum: { pointsAwarded: true },
+        });
+
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            points: totalPoints._sum.pointsAwarded || 0,
+            credits: { increment: refundByUser.get(userId) || 0 },
+          },
+        });
+      }
+
+      return allBets.length;
     });
 
     console.log("✓ Event deleted:", eventId);
 
     return NextResponse.json({
-      message: `Esemény és ${allBets.length} tipp sikeresen törölve`,
-      deletedBetsCount: allBets.length,
+      message: `Esemény és ${deletedBetsCount} tipp sikeresen törölve`,
+      deletedBetsCount,
     });
   } catch (err) {
+    if (err instanceof Error && err.message === "EVENT_NOT_FOUND") {
+      return NextResponse.json(
+        { message: "Esemény nem található" },
+        { status: 404 }
+      );
+    }
     console.error(err);
     return NextResponse.json(
       { message: "Hiba az esemény törlésekor" },
