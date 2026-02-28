@@ -71,6 +71,12 @@ export async function POST(req: NextRequest) {
 
     const drive = google.drive({ version: "v3", auth });
 
+    await drive.files.get({
+      fileId: driveFolderId,
+      fields: "id,name,mimeType",
+      supportsAllDrives: true,
+    });
+
     const uploadResponse = await drive.files.create({
       requestBody: {
         name: fileName,
@@ -89,8 +95,25 @@ export async function POST(req: NextRequest) {
       message: "Backup sikeresen feltöltve Google Drive-ra.",
       file: uploadResponse.data,
     });
-  } catch (err) {
-    console.error("Google Drive backup upload error:", err);
-    return NextResponse.json({ message: "Hiba a Google Drive feltöltés közben" }, { status: 500 });
+  } catch (err: any) {
+    const apiStatus = Number(err?.response?.status) || 500;
+    const apiMessage =
+      err?.response?.data?.error?.message ||
+      err?.response?.data?.error_description ||
+      err?.message ||
+      "Ismeretlen hiba";
+
+    console.error("Google Drive backup upload error:", {
+      status: apiStatus,
+      message: apiMessage,
+      raw: err,
+    });
+
+    return NextResponse.json(
+      {
+        message: `Hiba a Google Drive feltöltés közben: ${apiMessage}`,
+      },
+      { status: apiStatus >= 400 && apiStatus < 600 ? apiStatus : 500 }
+    );
   }
 }
