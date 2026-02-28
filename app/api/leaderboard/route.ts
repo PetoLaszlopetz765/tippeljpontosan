@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
         points: true,
         credits: true,
         role: true,
+        tipsCountAdjustment: true,
+        perfectCountAdjustment: true,
         bets: {
           select: {
             pointsAwarded: true,
@@ -21,15 +23,20 @@ export async function GET(req: NextRequest) {
     });
 
     // Tipp statisztikák bets-ből, pont pedig User.points-ból
-    const leaderboard = users.map(user => ({
-      id: user.id,
-      username: user.username,
-      credits: user.credits,
-      role: user.role,
-      points: user.points,
-      tipsCount: user.bets.length,
-      perfectCount: user.bets.filter(bet => bet.pointsAwarded === 6).length,
-    })).sort((a, b) => b.points - a.points);
+    const leaderboard = users.map((user) => {
+      const baseTipsCount = user.bets.length;
+      const basePerfectCount = user.bets.filter((bet) => bet.pointsAwarded === 6).length;
+
+      return {
+        id: user.id,
+        username: user.username,
+        credits: user.credits,
+        role: user.role,
+        points: user.points,
+        tipsCount: Math.max(0, baseTipsCount + user.tipsCountAdjustment),
+        perfectCount: Math.max(0, basePerfectCount + user.perfectCountAdjustment),
+      };
+    }).sort((a, b) => b.points - a.points);
 
     return NextResponse.json(leaderboard);
   } catch (err) {

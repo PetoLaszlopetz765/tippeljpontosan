@@ -122,6 +122,8 @@ export async function POST(req: NextRequest) {
             role: String(row.role ?? "USER"),
             points: toNumber(row.points, 0),
             credits: toNumber(row.credits, 0),
+            tipsCountAdjustment: toNumber(row.tipsCountAdjustment, 0),
+            perfectCountAdjustment: toNumber(row.perfectCountAdjustment, 0),
           },
           create: {
             id,
@@ -130,6 +132,8 @@ export async function POST(req: NextRequest) {
             role: String(row.role ?? "USER"),
             points: toNumber(row.points, 0),
             credits: toNumber(row.credits, 0),
+            tipsCountAdjustment: toNumber(row.tipsCountAdjustment, 0),
+            perfectCountAdjustment: toNumber(row.perfectCountAdjustment, 0),
           },
         });
         stats.user++;

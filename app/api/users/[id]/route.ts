@@ -38,8 +38,10 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     const userId = parseInt(params.id);
 
     const body = await req.json();
-    const { username, role, points, password } = body;
+    const { username, role, points, password, tipsCountAdjustment, perfectCountAdjustment } = body;
     let validatedPoints: number | undefined = undefined;
+    let validatedTipsCountAdjustment: number | undefined = undefined;
+    let validatedPerfectCountAdjustment: number | undefined = undefined;
 
     if (points !== undefined) {
       const parsed = Number(points);
@@ -50,6 +52,28 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         );
       }
       validatedPoints = Math.floor(parsed);
+    }
+
+    if (tipsCountAdjustment !== undefined) {
+      const parsed = Number(tipsCountAdjustment);
+      if (!Number.isFinite(parsed)) {
+        return NextResponse.json(
+          { message: "Érvénytelen összes tipp korrekció" },
+          { status: 400 }
+        );
+      }
+      validatedTipsCountAdjustment = Math.trunc(parsed);
+    }
+
+    if (perfectCountAdjustment !== undefined) {
+      const parsed = Number(perfectCountAdjustment);
+      if (!Number.isFinite(parsed)) {
+        return NextResponse.json(
+          { message: "Érvénytelen telitalálat korrekció" },
+          { status: 400 }
+        );
+      }
+      validatedPerfectCountAdjustment = Math.trunc(parsed);
     }
 
     // Check if username is taken by another user
@@ -78,6 +102,8 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         ...(username && { username }),
         ...(role && { role }),
         ...(validatedPoints !== undefined && { points: validatedPoints }),
+        ...(validatedTipsCountAdjustment !== undefined && { tipsCountAdjustment: validatedTipsCountAdjustment }),
+        ...(validatedPerfectCountAdjustment !== undefined && { perfectCountAdjustment: validatedPerfectCountAdjustment }),
         ...(hashedPassword && { password: hashedPassword }),
       },
       select: {
@@ -85,6 +111,8 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         username: true,
         role: true,
         points: true,
+        tipsCountAdjustment: true,
+        perfectCountAdjustment: true,
       },
     });
 

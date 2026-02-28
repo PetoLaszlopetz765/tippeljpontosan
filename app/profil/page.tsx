@@ -38,7 +38,7 @@ export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [totalPoints, setTotalPoints] = useState(0);
-  const [profile, setProfile] = useState<{ username: string, credits: number, points: number } | null>(null);
+  const [profile, setProfile] = useState<{ username: string, credits: number, points: number, tipsCount?: number, perfectCount?: number } | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
 
@@ -164,7 +164,7 @@ export default function ProfilPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm text-gray-700 mb-1">Összes tipp</p>
-              <p className="text-3xl font-extrabold text-blue-900">{bets.length}</p>
+              <p className="text-3xl font-extrabold text-blue-900">{typeof profile?.tipsCount === "number" ? profile.tipsCount : bets.length}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
               <p className="text-sm text-gray-700 mb-1">Lezárt tippek</p>
@@ -179,7 +179,7 @@ export default function ProfilPage() {
             <div className="text-center p-4 bg-yellow-50 rounded-xl border border-yellow-200">
               <p className="text-sm text-gray-700 mb-1">Telitalálatok (6 pont)</p>
               <p className="text-3xl font-extrabold text-yellow-900">
-                {bets.filter(b => b.pointsAwarded === 6).length}
+                {typeof profile?.perfectCount === "number" ? profile.perfectCount : bets.filter(b => b.pointsAwarded === 6).length}
               </p>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-xl border border-red-200">

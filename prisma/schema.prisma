@@ -20,6 +20,8 @@ model User {
   role     String  @default("USER")
   points   Int     @default(0)
   credits  Int     @default(0)
+  tipsCountAdjustment Int @default(0)
+  perfectCountAdjustment Int @default(0)
   bets     Bet[]
   chatMessages ChatMessage[]
 }

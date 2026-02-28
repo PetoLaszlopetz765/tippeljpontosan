@@ -42,13 +42,38 @@ export async function GET(req: NextRequest) {
         role: true,
         points: true,
         credits: true,
+        tipsCountAdjustment: true,
+        perfectCountAdjustment: true,
+        bets: {
+          select: {
+            pointsAwarded: true,
+          },
+        },
       },
       orderBy: {
         username: "asc",
       },
     });
 
-    return NextResponse.json(users);
+    const usersWithStats = users.map((user) => {
+      const tipsCount = user.bets.length;
+      const perfectCount = user.bets.filter((bet) => bet.pointsAwarded === 6).length;
+      return {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        points: user.points,
+        credits: user.credits,
+        tipsCount,
+        perfectCount,
+        tipsCountAdjustment: user.tipsCountAdjustment,
+        perfectCountAdjustment: user.perfectCountAdjustment,
+        finalTipsCount: Math.max(0, tipsCount + user.tipsCountAdjustment),
+        finalPerfectCount: Math.max(0, perfectCount + user.perfectCountAdjustment),
+      };
+    });
+
+    return NextResponse.json(usersWithStats);
   } catch (err) {
     console.error("Get users error:", err);
     return NextResponse.json(
@@ -120,12 +145,16 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         role: role || "USER",
         points: 0,
+        tipsCountAdjustment: 0,
+        perfectCountAdjustment: 0,
       },
       select: {
         id: true,
         username: true,
         role: true,
         points: true,
+        tipsCountAdjustment: true,
+        perfectCountAdjustment: true,
       },
     });
 

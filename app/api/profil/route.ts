@@ -25,10 +25,26 @@ export async function GET(req: NextRequest) {
         credits: true,
         points: true,
         role: true,
+        tipsCountAdjustment: true,
+        perfectCountAdjustment: true,
       },
     });
     if (!user) return NextResponse.json({ message: "Nincs ilyen felhasználó" }, { status: 404 });
-    return NextResponse.json(user);
+
+    const [baseTipsCount, basePerfectCount] = await Promise.all([
+      prisma.bet.count({ where: { userId: user.id } }),
+      prisma.bet.count({ where: { userId: user.id, pointsAwarded: 6 } }),
+    ]);
+
+    return NextResponse.json({
+      id: user.id,
+      username: user.username,
+      credits: user.credits,
+      points: user.points,
+      role: user.role,
+      tipsCount: Math.max(0, baseTipsCount + user.tipsCountAdjustment),
+      perfectCount: Math.max(0, basePerfectCount + user.perfectCountAdjustment),
+    });
   } catch (err) {
     return NextResponse.json({ message: "Hiba a profil lekérdezésekor" }, { status: 500 });
   }

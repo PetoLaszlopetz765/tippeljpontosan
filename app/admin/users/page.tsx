@@ -8,6 +8,12 @@ interface User {
   role: string;
   credits: number;
   points?: number;
+  tipsCount?: number;
+  perfectCount?: number;
+  tipsCountAdjustment?: number;
+  perfectCountAdjustment?: number;
+  finalTipsCount?: number;
+  finalPerfectCount?: number;
   [key: string]: any;
 }
 
@@ -20,6 +26,8 @@ export default function AdminUsersPage() {
   const [newUser, setNewUser] = useState({ username: "", password: "", inviteCode: "", role: "USER" });
   const [creditEdit, setCreditEdit] = useState<{ [userId: string]: string }>({});
   const [pointsEdit, setPointsEdit] = useState<{ [userId: string]: string }>({});
+  const [tipsCountAdjustmentEdit, setTipsCountAdjustmentEdit] = useState<{ [userId: string]: string }>({});
+  const [perfectCountAdjustmentEdit, setPerfectCountAdjustmentEdit] = useState<{ [userId: string]: string }>({});
   const [passwordEdit, setPasswordEdit] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
@@ -99,6 +107,14 @@ export default function AdminUsersPage() {
 
   const handlePointsChange = (userId: string, value: string) => {
     setPointsEdit((prev) => ({ ...prev, [userId]: value }));
+  };
+
+  const handleTipsCountAdjustmentChange = (userId: string, value: string) => {
+    setTipsCountAdjustmentEdit((prev) => ({ ...prev, [userId]: value }));
+  };
+
+  const handlePerfectCountAdjustmentChange = (userId: string, value: string) => {
+    setPerfectCountAdjustmentEdit((prev) => ({ ...prev, [userId]: value }));
   };
 
   const handleCreditUpdate = async (userId: string) => {
@@ -185,6 +201,62 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleTipsCountAdjustmentUpdate = async (userId: string) => {
+    if (!token) return;
+    const newValue = tipsCountAdjustmentEdit[userId];
+    if (newValue === "" || isNaN(Number(newValue))) {
+      setError("Érvénytelen összes tipp korrekció!");
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ tipsCountAdjustment: Number(newValue) }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba az összes tipp korrekció mentésekor");
+      }
+      setTipsCountAdjustmentEdit((prev) => ({ ...prev, [userId]: "" }));
+      fetchUsers(token);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
+    }
+  };
+
+  const handlePerfectCountAdjustmentUpdate = async (userId: string) => {
+    if (!token) return;
+    const newValue = perfectCountAdjustmentEdit[userId];
+    if (newValue === "" || isNaN(Number(newValue))) {
+      setError("Érvénytelen telitalálat korrekció!");
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ perfectCountAdjustment: Number(newValue) }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Hiba a telitalálat korrekció mentésekor");
+      }
+      setPerfectCountAdjustmentEdit((prev) => ({ ...prev, [userId]: "" }));
+      fetchUsers(token);
+    } catch (err: any) {
+      setError(err.message || "Ismeretlen hiba");
+    }
+  };
+
   if (loading) return <div>Betöltés...</div>;
   if (!isAdmin) return null;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -197,7 +269,7 @@ export default function AdminUsersPage() {
             👤 Felhasználók kezelése
           </h1>
           <p className="text-center text-gray-700 text-lg mb-4">
-            Itt tudod az összes felhasználót, pontszámukat és kreditjüket áttekinteni, módosítani.
+            Itt tudod az összes felhasználót, pontszámukat, kreditjüket és tipp statisztika korrekcióikat áttekinteni, módosítani.
           </p>
         </header>
         <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-6 mb-8">
@@ -259,6 +331,10 @@ export default function AdminUsersPage() {
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Szerep</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Pont (Új érték)</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Összes tipp</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Tipp korrekció</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Telitalálat</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Telitalálat korrekció</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit (Új érték)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
@@ -266,7 +342,7 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {Array.isArray(users) && users.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
+                  <tr><td colSpan={11} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
                 ) : (Array.isArray(users) && users.length > 0 ? (
                   users.map(user => (
                     <tr key={user.id} className="border-t border-gray-100 hover:bg-blue-50">
@@ -284,6 +360,36 @@ export default function AdminUsersPage() {
                             placeholder="Pl: 10"
                           />
                           <button type="submit" className="bg-amber-700 hover:bg-amber-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
+                        </form>
+                      </td>
+                      <td className="py-2 px-3 text-gray-900 font-semibold">
+                        {typeof user.finalTipsCount === "number" ? user.finalTipsCount : (typeof user.tipsCount === "number" ? user.tipsCount : "-")}
+                      </td>
+                      <td className="py-2 px-3">
+                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handleTipsCountAdjustmentUpdate(user.id); }}>
+                          <input
+                            type="number"
+                            value={tipsCountAdjustmentEdit[user.id] || ""}
+                            onChange={e => handleTipsCountAdjustmentChange(user.id, e.target.value)}
+                            className="border border-cyan-300 rounded-xl px-2 py-1 w-24 text-gray-900 bg-white shadow-sm"
+                            placeholder={`Akt: ${user.tipsCountAdjustment ?? 0}`}
+                          />
+                          <button type="submit" className="bg-cyan-700 hover:bg-cyan-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
+                        </form>
+                      </td>
+                      <td className="py-2 px-3 text-gray-900 font-semibold">
+                        {typeof user.finalPerfectCount === "number" ? user.finalPerfectCount : (typeof user.perfectCount === "number" ? user.perfectCount : "-")}
+                      </td>
+                      <td className="py-2 px-3">
+                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handlePerfectCountAdjustmentUpdate(user.id); }}>
+                          <input
+                            type="number"
+                            value={perfectCountAdjustmentEdit[user.id] || ""}
+                            onChange={e => handlePerfectCountAdjustmentChange(user.id, e.target.value)}
+                            className="border border-yellow-300 rounded-xl px-2 py-1 w-24 text-gray-900 bg-white shadow-sm"
+                            placeholder={`Akt: ${user.perfectCountAdjustment ?? 0}`}
+                          />
+                          <button type="submit" className="bg-yellow-700 hover:bg-yellow-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
                         </form>
                       </td>
                       <td className="py-2 px-3">
@@ -359,6 +465,8 @@ export default function AdminUsersPage() {
                     <div>
                       <div className="font-extrabold text-gray-900">{user.username}</div>
                       <div className="text-xs text-gray-600">Pont: {typeof user.points === 'number' ? user.points : '-'}</div>
+                      <div className="text-xs text-gray-600">Tippek: {typeof user.finalTipsCount === 'number' ? user.finalTipsCount : (typeof user.tipsCount === 'number' ? user.tipsCount : '-')}</div>
+                      <div className="text-xs text-gray-600">Telitalálat: {typeof user.finalPerfectCount === 'number' ? user.finalPerfectCount : (typeof user.perfectCount === 'number' ? user.perfectCount : '-')}</div>
                     </div>
                     <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">{user.role}</span>
                   </div>
@@ -380,6 +488,36 @@ export default function AdminUsersPage() {
                         className="bg-amber-700 hover:bg-amber-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
                       >
                         Pont
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={tipsCountAdjustmentEdit[user.id] || ""}
+                        onChange={e => handleTipsCountAdjustmentChange(user.id, e.target.value)}
+                        className="flex-1 border border-cyan-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
+                        placeholder={`Összes tipp korrekció (akt: ${user.tipsCountAdjustment ?? 0})`}
+                      />
+                      <button
+                        onClick={() => handleTipsCountAdjustmentUpdate(user.id)}
+                        className="bg-cyan-700 hover:bg-cyan-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
+                      >
+                        Tippek
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={perfectCountAdjustmentEdit[user.id] || ""}
+                        onChange={e => handlePerfectCountAdjustmentChange(user.id, e.target.value)}
+                        className="flex-1 border border-yellow-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
+                        placeholder={`Telitalálat korrekció (akt: ${user.perfectCountAdjustment ?? 0})`}
+                      />
+                      <button
+                        onClick={() => handlePerfectCountAdjustmentUpdate(user.id)}
+                        className="bg-yellow-700 hover:bg-yellow-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
+                      >
+                        Telitalálat
                       </button>
                     </div>
                   <div className="space-y-2">
