@@ -191,7 +191,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-10">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-3">
             👤 Felhasználók kezelése
@@ -201,8 +201,8 @@ export default function AdminUsersPage() {
           </p>
         </header>
         <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-6 mb-8">
-          <form onSubmit={handleCreateUser} className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex flex-col flex-1 w-full">
+          <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-end">
+            <div className="flex flex-col w-full">
               <label className="text-sm font-semibold mb-1 text-gray-900">Felhasználónév</label>
               <input
                 type="text"
@@ -213,7 +213,7 @@ export default function AdminUsersPage() {
                 className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
               />
             </div>
-            <div className="flex flex-col flex-1 w-full">
+            <div className="flex flex-col w-full">
               <label className="text-sm font-semibold mb-1 text-gray-900">Jelszó</label>
               <input
                 type="password"
@@ -224,7 +224,7 @@ export default function AdminUsersPage() {
                 className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
               />
             </div>
-            <div className="flex flex-col flex-1 w-full">
+            <div className="flex flex-col w-full">
               <label className="text-sm font-semibold mb-1 text-gray-900">Meghívókód</label>
               <input
                 type="text"
@@ -235,7 +235,7 @@ export default function AdminUsersPage() {
                 className="border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm"
               />
             </div>
-            <div className="flex flex-col flex-1 w-full">
+            <div className="flex flex-col w-full">
               <label className="text-sm font-semibold mb-1 text-gray-900">Szerepkör</label>
               <select
                 value={newUser.role}
@@ -246,12 +246,12 @@ export default function AdminUsersPage() {
                 <option value="ADMIN">ADMIN</option>
               </select>
             </div>
-            <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-6 py-2 rounded-xl shadow w-full md:w-auto">Létrehozás</button>
+            <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-6 py-2 rounded-xl shadow w-full md:col-span-2 xl:col-span-1">Létrehozás</button>
           </form>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
           {/* Asztali nézet: táblázat */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden xl:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-blue-50">
@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Mobil nézet: kártyák */}
-          <div className="grid gap-3 md:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 xl:hidden">
             {Array.isArray(users) && users.length === 0 ? (
               <div className="text-center py-4 text-gray-500">Nincs felhasználó</div>
             ) : (Array.isArray(users) && users.length > 0 ? (
