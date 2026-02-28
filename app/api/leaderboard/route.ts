@@ -3,12 +3,13 @@ import { prisma } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
-    // Összes felhasználó pontjaival rendezve
-    // Minden felhasználó összesített pontjának lekérdezése (összes bet pontjainak összege)
+    // Összes felhasználó lekérdezése
+    // A pont forrása a User.points mező (admin által is szerkeszthető)
     const users = await prisma.user.findMany({
       select: {
         id: true,
         username: true,
+        points: true,
         credits: true,
         role: true,
         bets: {
@@ -19,13 +20,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Összesített pontszám és tippelt meccsek számának számítása
+    // Tipp statisztikák bets-ből, pont pedig User.points-ból
     const leaderboard = users.map(user => ({
       id: user.id,
       username: user.username,
       credits: user.credits,
       role: user.role,
-      points: user.bets.reduce((sum, bet) => sum + (bet.pointsAwarded || 0), 0),
+      points: user.points,
       tipsCount: user.bets.length,
       perfectCount: user.bets.filter(bet => bet.pointsAwarded === 6).length,
     })).sort((a, b) => b.points - a.points);

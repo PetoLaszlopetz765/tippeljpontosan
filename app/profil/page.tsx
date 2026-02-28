@@ -54,6 +54,7 @@ export default function ProfilPage() {
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
+          setTotalPoints(Number(data?.points || 0));
         }
       } catch {}
     }
@@ -102,8 +103,6 @@ export default function ProfilPage() {
         if (res.ok) {
           const data = await res.json();
           setBets(data);
-          const total = data.reduce((sum: number, bet: Bet) => sum + bet.pointsAwarded, 0);
-          setTotalPoints(total);
         } else {
           setError("Nem sikerült betölteni a tippeket");
         }
