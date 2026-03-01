@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { exportElementToPdf } from "@/lib/exportPdf";
 
 type UserBet = {
   eventId: number;
@@ -55,6 +56,8 @@ export default function TegnapiEsemenyekPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const exportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -191,8 +194,14 @@ export default function TegnapiEsemenyekPage() {
     return result;
   }, [leaderboard, yesterdayEvents, allVisibleBets]);
 
-  const handleExportPdf = () => {
-    window.print();
+  const handleExportPdf = async () => {
+    if (!exportRef.current || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      await exportElementToPdf(exportRef.current, `tegnapi-esemenyek-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   return (
@@ -208,9 +217,10 @@ export default function TegnapiEsemenyekPage() {
           <button
             type="button"
             onClick={handleExportPdf}
-            className="print:hidden inline-flex items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 shadow"
+            disabled={loading || !!error || yesterdayEvents.length === 0 || exportingPdf}
+            className="inline-flex items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold px-4 py-2 shadow"
           >
-            PDF export
+            {exportingPdf ? "PDF készül..." : "PDF export"}
           </button>
         </div>
 
@@ -227,7 +237,7 @@ export default function TegnapiEsemenyekPage() {
             Tegnapra nincs megjeleníthető esemény.
           </div>
         ) : (
-          <div className="grid gap-4 sm:gap-5">
+          <div ref={exportRef} className="grid gap-4 sm:gap-5">
             {yesterdayEvents.map((event) => {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
