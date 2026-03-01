@@ -64,6 +64,28 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
         refundByUser.set(bet.userId, (refundByUser.get(bet.userId) || 0) + (bet.creditSpent || 0));
       }
 
+      const userIds = Array.from(refundByUser.keys());
+
+      const [affectedUsersBefore, basePointsBeforeByUser] = await Promise.all([
+        tx.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, points: true },
+        }),
+        tx.bet.groupBy({
+          by: ["userId"],
+          where: { userId: { in: userIds } },
+          _sum: { pointsAwarded: true },
+        }),
+      ]);
+
+      const baseBeforeMap = new Map<number, number>(
+        basePointsBeforeByUser.map((row) => [row.userId, row._sum.pointsAwarded || 0])
+      );
+
+      const pointsAdjustmentByUser = new Map<number, number>(
+        affectedUsersBefore.map((user) => [user.id, user.points - (baseBeforeMap.get(user.id) || 0)])
+      );
+
       await tx.bet.deleteMany({
         where: { eventId },
       });
@@ -76,17 +98,24 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
         where: { id: eventId },
       });
 
-      const userIds = Array.from(refundByUser.keys());
-      for (const userId of userIds) {
-        const totalPoints = await tx.bet.aggregate({
-          where: { userId },
-          _sum: { pointsAwarded: true },
-        });
+      const basePointsAfterByUser = await tx.bet.groupBy({
+        by: ["userId"],
+        where: { userId: { in: userIds } },
+        _sum: { pointsAwarded: true },
+      });
 
+      const baseAfterMap = new Map<number, number>(
+        basePointsAfterByUser.map((row) => [row.userId, row._sum.pointsAwarded || 0])
+      );
+
+      for (const userId of userIds) {
         await tx.user.update({
           where: { id: userId },
           data: {
-            points: totalPoints._sum.pointsAwarded || 0,
+            points: Math.max(
+              0,
+              (baseAfterMap.get(userId) || 0) + (pointsAdjustmentByUser.get(userId) || 0)
+            ),
             credits: { increment: refundByUser.get(userId) || 0 },
           },
         });

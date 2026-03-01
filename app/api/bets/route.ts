@@ -65,6 +65,12 @@ export async function POST(req: NextRequest) {
         throw new Error("Felhasználó nem található");
       }
 
+      const basePointsBefore = await tx.bet.aggregate({
+        where: { userId },
+        _sum: { pointsAwarded: true },
+      });
+      const pointsAdjustment = user.points - (basePointsBefore._sum.pointsAwarded || 0);
+
       const requestedEventIds = Array.from(
         new Set(
           body
@@ -210,7 +216,7 @@ export async function POST(req: NextRequest) {
         await tx.user.update({
           where: { id: userId },
           data: {
-            points: totalPoints._sum.pointsAwarded || 0,
+            points: Math.max(0, (totalPoints._sum.pointsAwarded || 0) + pointsAdjustment),
             credits: { decrement: creditSpent },
           },
         });

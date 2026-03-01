@@ -136,6 +136,27 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
 
     console.log(`Found ${allBets.length} bets for this event`);
 
+    const affectedUserIds = Array.from(new Set(allBets.map((bet) => bet.userId)));
+
+    const [affectedUsersBefore, basePointsBeforeByUser] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: affectedUserIds } },
+        select: { id: true, points: true },
+      }),
+      prisma.bet.groupBy({
+        by: ["userId"],
+        where: { userId: { in: affectedUserIds } },
+        _sum: { pointsAwarded: true },
+      }),
+    ]);
+
+    const baseBeforeMap = new Map<number, number>(
+      basePointsBeforeByUser.map((row) => [row.userId, row._sum.pointsAwarded || 0])
+    );
+    const pointsAdjustmentByUser = new Map<number, number>(
+      affectedUsersBefore.map((user) => [user.id, user.points - (baseBeforeMap.get(user.id) || 0)])
+    );
+
     // Pontok újraszámítása minden tipphez
     const winningBets = [];
     
@@ -158,15 +179,27 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
         winningBets.push(bet.userId);
       }
 
-      // Felhasználó teljes pontjainak frissítése
-      const totalPoints = await prisma.bet.aggregate({
-        where: { userId: bet.userId },
-        _sum: { pointsAwarded: true },
-      });
+    }
+
+    const basePointsAfterByUser = await prisma.bet.groupBy({
+      by: ["userId"],
+      where: { userId: { in: affectedUserIds } },
+      _sum: { pointsAwarded: true },
+    });
+
+    const baseAfterMap = new Map<number, number>(
+      basePointsAfterByUser.map((row) => [row.userId, row._sum.pointsAwarded || 0])
+    );
+
+    for (const userId of affectedUserIds) {
+      const adjustedPoints = Math.max(
+        0,
+        (baseAfterMap.get(userId) || 0) + (pointsAdjustmentByUser.get(userId) || 0)
+      );
 
       await prisma.user.update({
-        where: { id: bet.userId },
-        data: { points: totalPoints._sum.pointsAwarded || 0 },
+        where: { id: userId },
+        data: { points: adjustedPoints },
       });
     }
 
