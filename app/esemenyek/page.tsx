@@ -195,12 +195,25 @@ export default function EsemenyekPage() {
     return result;
   }, [leaderboard, todayEvents, allVisibleBets]);
 
+  const handleExportPdf = () => {
+    window.print();
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-3 sm:px-4 py-6 sm:py-10">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100">📅 Mai események</h1>
-          <p className="text-gray-700 dark:text-slate-300 mt-2 text-sm sm:text-base">Csak a rendszeridő szerinti mai nap eseményei.</p>
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-slate-100">📅 Mai események</h1>
+            <p className="text-gray-700 dark:text-slate-300 mt-2 text-sm sm:text-base">Csak a rendszeridő szerinti mai nap eseményei.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            className="print:hidden inline-flex items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 shadow"
+          >
+            PDF export
+          </button>
         </div>
 
         {loading ? (
