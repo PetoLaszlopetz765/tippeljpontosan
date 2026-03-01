@@ -1,23 +1,23 @@
 export async function exportElementToPdf(element: HTMLElement, fileName: string) {
-  const [jspdfModule, html2canvasModule] = await Promise.all([
+  const [jspdfModule, htmlToImageModule] = await Promise.all([
     import("jspdf"),
-    import("html2canvas"),
+    import("html-to-image"),
   ]);
 
   const JsPdfCtor = (jspdfModule as any).jsPDF || (jspdfModule as any).default;
-  const html2canvasFn = (html2canvasModule as any).default || html2canvasModule;
+  const toCanvasFn = (htmlToImageModule as any).toCanvas;
 
   if (!JsPdfCtor || typeof JsPdfCtor !== "function") {
     throw new Error("A jsPDF modul nem tölthető be.");
   }
 
-  if (!html2canvasFn || typeof html2canvasFn !== "function") {
-    throw new Error("A html2canvas modul nem tölthető be.");
+  if (!toCanvasFn || typeof toCanvasFn !== "function") {
+    throw new Error("A html-to-image modul nem tölthető be.");
   }
 
-  const canvas = await html2canvasFn(element, {
-    scale: 2,
-    useCORS: true,
+  const canvas = await toCanvasFn(element, {
+    pixelRatio: 2,
+    cacheBust: true,
     backgroundColor: "#ffffff",
   });
 
