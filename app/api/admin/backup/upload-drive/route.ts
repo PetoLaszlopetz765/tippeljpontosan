@@ -49,6 +49,19 @@ function getBudapestHourMinute(date: Date) {
   return { hour, minute };
 }
 
+function isWithinDailyBackupWindowBudapest(date: Date) {
+  const { hour, minute } = getBudapestHourMinute(date);
+
+  const isLateBeforeMidnight = hour === 23 && minute >= 55;
+  const isJustAfterMidnightDelay = hour === 0 && minute <= 5;
+
+  return {
+    allowed: isLateBeforeMidnight || isJustAfterMidnightDelay,
+    hour,
+    minute,
+  };
+}
+
 function assertCronSecret(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
@@ -180,11 +193,12 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
-    const { hour, minute } = getBudapestHourMinute(now);
+    const windowCheck = isWithinDailyBackupWindowBudapest(now);
 
-    if (hour !== 23 || minute !== 59) {
+    if (!windowCheck.allowed) {
       return NextResponse.json({
-        message: "Cron futás kihagyva: nem 23:59 Europe/Budapest idő szerint.",
+        message: "Cron futás kihagyva: időablakon kívül (elvárt: 23:55-23:59 vagy 00:00-00:05 Europe/Budapest).",
+        budapestTime: `${String(windowCheck.hour).padStart(2, "0")}:${String(windowCheck.minute).padStart(2, "0")}`,
         utcNow: now.toISOString(),
       });
     }
