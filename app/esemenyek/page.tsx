@@ -203,6 +203,9 @@ export default function EsemenyekPage() {
     setExportingPdf(true);
     try {
       await exportElementToPdf(exportRef.current, `mai-esemenyek-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err: any) {
+      const message = err?.message || "Nem sikerült a PDF export.";
+      setError(message);
     } finally {
       setExportingPdf(false);
     }

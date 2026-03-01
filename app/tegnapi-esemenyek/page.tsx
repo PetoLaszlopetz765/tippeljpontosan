@@ -199,6 +199,9 @@ export default function TegnapiEsemenyekPage() {
     setExportingPdf(true);
     try {
       await exportElementToPdf(exportRef.current, `tegnapi-esemenyek-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err: any) {
+      const message = err?.message || "Nem sikerült a PDF export.";
+      setError(message);
     } finally {
       setExportingPdf(false);
     }
