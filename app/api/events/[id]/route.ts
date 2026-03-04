@@ -4,6 +4,108 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
+function parseBudapestToUTC(localDateTimeStr: string) {
+  const [datePart, timePart] = localDateTimeStr.split("T");
+  if (!datePart || !timePart) return null;
+
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute)
+  ) {
+    return null;
+  }
+
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Budapest",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const asIfUTC = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  const parts = dtf.formatToParts(asIfUTC);
+
+  const budapestHour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const budapestMinute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+
+  const utcHour = asIfUTC.getUTCHours();
+  const utcMinute = asIfUTC.getUTCMinutes();
+  const offsetMinutes = (budapestHour - utcHour) * 60 + (budapestMinute - utcMinute);
+
+  return new Date(asIfUTC.getTime() - offsetMinutes * 60000);
+}
+
+export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  try {
+    const params = await props.params;
+    const eventId = parseInt(params.id);
+
+    if (!Number.isFinite(eventId)) {
+      return NextResponse.json({ message: "Érvénytelen esemény azonosító" }, { status: 400 });
+    }
+
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ message: "Nincs token" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return NextResponse.json({ message: "Érvénytelen token" }, { status: 401 });
+    }
+
+    if (decoded.role !== "ADMIN") {
+      return NextResponse.json({ message: "Csak admin módosíthat eseményt" }, { status: 403 });
+    }
+
+    const { homeTeam, awayTeam, kickoffTime, creditCost } = await req.json();
+
+    if (!homeTeam || !awayTeam || !kickoffTime) {
+      return NextResponse.json({ message: "Hiányzó kötelező mezők" }, { status: 400 });
+    }
+
+    const parsedCreditCost = Number(creditCost);
+    if (!Number.isFinite(parsedCreditCost) || parsedCreditCost < 1) {
+      return NextResponse.json({ message: "Érvénytelen tipp díj" }, { status: 400 });
+    }
+
+    const kickoffUTC = parseBudapestToUTC(String(kickoffTime));
+    if (!kickoffUTC || Number.isNaN(kickoffUTC.getTime())) {
+      return NextResponse.json({ message: "Érvénytelen kezdési időpont" }, { status: 400 });
+    }
+
+    const updated = await prisma.event.update({
+      where: { id: eventId },
+      data: {
+        homeTeam: String(homeTeam).trim(),
+        awayTeam: String(awayTeam).trim(),
+        kickoffTime: kickoffUTC,
+        creditCost: Math.trunc(parsedCreditCost),
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (err: any) {
+    if (err?.code === "P2025") {
+      return NextResponse.json({ message: "Esemény nem található" }, { status: 404 });
+    }
+    console.error("Update event error:", err);
+    return NextResponse.json({ message: "Hiba az esemény módosításakor" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
     console.log("=== DELETE EVENT ENDPOINT CALLED ===");

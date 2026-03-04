@@ -47,6 +47,12 @@ export default function EventsAdminPage() {
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
   const [poolAmount, setPoolAmount] = useState<{ [eventId: number]: string }>({});
   const [poolLoading, setPoolLoading] = useState<number | null>(null);
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editHomeTeam, setEditHomeTeam] = useState("");
+  const [editAwayTeam, setEditAwayTeam] = useState("");
+  const [editKickoffTime, setEditKickoffTime] = useState("");
+  const [editCreditCost, setEditCreditCost] = useState("100");
+  const [updateLoadingEventId, setUpdateLoadingEventId] = useState<number | null>(null);
   const monthRef = useRef<HTMLInputElement | null>(null);
   const dayRef = useRef<HTMLInputElement | null>(null);
   const hourRef = useRef<HTMLInputElement | null>(null);
@@ -107,6 +113,82 @@ export default function EventsAdminPage() {
       console.log("✗ Not yet client-side");
     }
   }, [isClient]);
+
+  function formatEventDateToInput(iso: string) {
+    return new Date(iso)
+      .toLocaleString("sv-SE", {
+        timeZone: "Europe/Budapest",
+        hour12: false,
+      })
+      .replace(" ", "T")
+      .slice(0, 16);
+  }
+
+  function startEditEvent(event: Event) {
+    setEditingEventId(event.id);
+    setEditHomeTeam(event.homeTeam);
+    setEditAwayTeam(event.awayTeam);
+    setEditKickoffTime(formatEventDateToInput(event.kickoffTime));
+    setEditCreditCost(String(event.creditCost || 100));
+  }
+
+  function cancelEditEvent() {
+    setEditingEventId(null);
+    setEditHomeTeam("");
+    setEditAwayTeam("");
+    setEditKickoffTime("");
+    setEditCreditCost("100");
+  }
+
+  async function handleUpdateEvent(eventId: number) {
+    if (!token) {
+      setMessage("✗ Nincs bejelentkezve!");
+      return;
+    }
+
+    if (!editHomeTeam.trim() || !editAwayTeam.trim() || !editKickoffTime) {
+      setMessage("✗ Kérlek töltsd ki a kötelező mezőket!");
+      return;
+    }
+
+    const parsedCreditCost = Number(editCreditCost);
+    if (!Number.isFinite(parsedCreditCost) || parsedCreditCost < 1) {
+      setMessage("✗ A tipp költsége legalább 1 kredit legyen.");
+      return;
+    }
+
+    setUpdateLoadingEventId(eventId);
+    setMessage("");
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          homeTeam: editHomeTeam.trim(),
+          awayTeam: editAwayTeam.trim(),
+          kickoffTime: editKickoffTime,
+          creditCost: Math.trunc(parsedCreditCost),
+        }),
+      });
+
+      if (res.ok) {
+        setMessage("✅ Esemény sikeresen módosítva!");
+        cancelEditEvent();
+        await loadEvents();
+      } else {
+        const data = await res.json().catch(() => null);
+        setMessage(data?.message || "✗ Hiba az esemény módosításakor.");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("✗ Hálózati hiba történt.");
+    } finally {
+      setUpdateLoadingEventId(null);
+    }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -604,7 +686,7 @@ export default function EventsAdminPage() {
                 </p>
               )}
 
-              {events.filter(e => e.finalHomeGoals === null || e.finalAwayGoals === null).map((e) => {
+              {events.map((e) => {
                 const open = isEventOpen(e.status);
                 return (
                   <div
@@ -645,6 +727,65 @@ export default function EventsAdminPage() {
                         {open ? "Nyitott" : "Lezárt"}
                       </span>
                     </div>
+
+                    {editingEventId === e.id && (
+                      <div className="border-t pt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">Hazai csapat</label>
+                          <input
+                            value={editHomeTeam}
+                            onChange={(ev) => setEditHomeTeam(ev.target.value)}
+                            className="w-full h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">Vendég csapat</label>
+                          <input
+                            value={editAwayTeam}
+                            onChange={(ev) => setEditAwayTeam(ev.target.value)}
+                            className="w-full h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">Kezdés időpontja</label>
+                          <input
+                            type="datetime-local"
+                            value={editKickoffTime}
+                            onChange={(ev) => setEditKickoffTime(ev.target.value)}
+                            className="w-full h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">Tipp díj (kredit)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={editCreditCost}
+                            onChange={(ev) => setEditCreditCost(ev.target.value)}
+                            className="w-full h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="md:col-span-2 flex flex-col sm:flex-row gap-2">
+                          <button
+                            onClick={() => handleUpdateEvent(e.id)}
+                            disabled={updateLoadingEventId === e.id}
+                            className={`w-full sm:w-auto px-4 py-2 rounded-lg font-bold transition ${
+                              updateLoadingEventId === e.id
+                                ? "bg-blue-300 text-blue-900 cursor-not-allowed"
+                                : "bg-blue-700 text-white hover:bg-blue-800"
+                            }`}
+                          >
+                            {updateLoadingEventId === e.id ? "Mentés..." : "Módosítás mentése"}
+                          </button>
+                          <button
+                            onClick={cancelEditEvent}
+                            className="w-full sm:w-auto px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-900 hover:bg-gray-300 transition"
+                          >
+                            Mégse
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Pool kezelés */}
                     <div className="flex flex-col sm:flex-row gap-2 sm:items-center border-t pt-3">
@@ -687,6 +828,15 @@ export default function EventsAdminPage() {
                       </div>
 
                       <div className="flex gap-2">
+                        {editingEventId !== e.id && (
+                          <button
+                            onClick={() => startEditEvent(e)}
+                            className="text-sm font-bold px-3 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100 transition"
+                          >
+                            ✏️ Módosítás
+                          </button>
+                        )}
+
                         {open && (
                           <button
                             onClick={() => handleCloseEvent(e.id)}
@@ -701,7 +851,7 @@ export default function EventsAdminPage() {
                           </button>
                         )}
                         
-                        {!open && !e.finalHomeGoals && !e.finalAwayGoals && (
+                        {!open && e.finalHomeGoals === null && e.finalAwayGoals === null && (
                           <button
                             onClick={() => {
                               console.log("🔔 RESULT BUTTON CLICKED for event", e.id);
