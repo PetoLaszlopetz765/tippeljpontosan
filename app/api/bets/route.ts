@@ -83,11 +83,39 @@ export async function POST(req: NextRequest) {
         where: { id: { in: requestedEventIds } },
         select: {
           id: true,
+          status: true,
+          kickoffTime: true,
           creditCost: true,
           finalHomeGoals: true,
           finalAwayGoals: true,
         },
       });
+
+      const autoCloseThreshold = new Date(Date.now() + 120 * 60 * 1000);
+
+      const shouldBeClosedIds = events
+        .filter(
+          (event) =>
+            (event.status === "OPEN" || event.status === "NYITOTT") &&
+            new Date(event.kickoffTime).getTime() <= autoCloseThreshold.getTime()
+        )
+        .map((event) => event.id);
+
+      if (shouldBeClosedIds.length > 0) {
+        await tx.event.updateMany({
+          where: { id: { in: shouldBeClosedIds } },
+          data: { status: "CLOSED" },
+        });
+      }
+
+      const blockedEvent = events.find((event) => {
+        const isClosed = event.status === "CLOSED" || event.status === "LEZÁRT" || shouldBeClosedIds.includes(event.id);
+        return isClosed;
+      });
+
+      if (blockedEvent) {
+        throw new Error(`Ez az esemény már lezárt, nem lehet rá tippelni: ${blockedEvent.id}`);
+      }
 
       const eventById = new Map(events.map((event) => [event.id, event]));
 
@@ -229,8 +257,10 @@ export async function POST(req: NextRequest) {
       message: `✅ Tippek leadva! ${result.creditSpent > 0 ? `${result.creditSpent} kredit levonásra került.` : 'Már meglévő tippek frissítve.'}`,
       creditSpent: result.creditSpent
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ message: "Hiba a tippek leadásakor" }, { status: 500 });
+    const message = err?.message || "Hiba a tippek leadásakor";
+    const isBlockedByClosure = typeof message === "string" && message.includes("már lezárt");
+    return NextResponse.json({ message }, { status: isBlockedByClosure ? 400 : 500 });
   }
 }

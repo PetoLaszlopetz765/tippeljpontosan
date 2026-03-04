@@ -86,6 +86,18 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const autoCloseThreshold = new Date(Date.now() + 120 * 60 * 1000);
+
+    await prisma.event.updateMany({
+      where: {
+        status: { in: ["OPEN", "NYITOTT"] },
+        kickoffTime: { lte: autoCloseThreshold },
+      },
+      data: {
+        status: "CLOSED",
+      },
+    });
+
     const events = await prisma.event.findMany({
       include: {
         dailyPool: true,

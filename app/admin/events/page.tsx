@@ -45,6 +45,7 @@ export default function EventsAdminPage() {
   const [isClient, setIsClient] = useState(false);
   const [closingEventId, setClosingEventId] = useState<number | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [reopeningEventId, setReopeningEventId] = useState<number | null>(null);
   const [poolAmount, setPoolAmount] = useState<{ [eventId: number]: string }>({});
   const [poolLoading, setPoolLoading] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
@@ -118,6 +119,10 @@ export default function EventsAdminPage() {
     const closedWithoutResult = !isEventOpen(event.status) && event.finalHomeGoals === null && event.finalAwayGoals === null;
     return !closedWithoutResult;
   });
+
+  const reopenableEvents = events.filter(
+    (event) => !isEventOpen(event.status) && event.finalHomeGoals === null && event.finalAwayGoals === null
+  );
 
   function formatEventDateToInput(iso: string) {
     return new Date(iso)
@@ -425,6 +430,38 @@ export default function EventsAdminPage() {
       setMessage("✗ Hálózati hiba történt.");
     } finally {
       setClosingEventId(null);
+    }
+  }
+
+  async function handleReopenEvent(eventId: number) {
+    if (!token) {
+      setMessage("✗ Nincs bejelentkezve!");
+      return;
+    }
+
+    setReopeningEventId(eventId);
+    setMessage("");
+
+    try {
+      const res = await fetch(`/api/events/${eventId}/open`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setMessage("✅ Esemény sikeresen visszanyitva!");
+        await loadEvents();
+      } else {
+        const data = await res.json().catch(() => null);
+        setMessage(data?.message || "✗ Hiba az esemény visszanyitásakor.");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("✗ Hálózati hiba történt.");
+    } finally {
+      setReopeningEventId(null);
     }
   }
 
@@ -886,6 +923,35 @@ export default function EventsAdminPage() {
                   </div>
                 );
               })}
+
+              {reopenableEvents.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <h3 className="text-sm font-extrabold text-orange-800 mb-2">Lezárt, eredmény nélküli események (visszanyitás)</h3>
+                  <div className="space-y-2">
+                    {reopenableEvents.map((e) => (
+                      <div key={`reopen-${e.id}`} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white border border-orange-200 rounded-lg px-3 py-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{e.homeTeam} – {e.awayTeam}</p>
+                          <p className="text-xs text-gray-700">
+                            Kezdés: {new Date(e.kickoffTime).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleReopenEvent(e.id)}
+                          disabled={reopeningEventId === e.id}
+                          className={`text-sm font-bold px-3 py-1 rounded-lg transition ${
+                            reopeningEventId === e.id
+                              ? "bg-green-300 text-green-900 cursor-not-allowed"
+                              : "bg-green-600 text-white hover:bg-green-700"
+                          }`}
+                        >
+                          {reopeningEventId === e.id ? "Visszanyitás..." : "🔓 Visszanyitás"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
