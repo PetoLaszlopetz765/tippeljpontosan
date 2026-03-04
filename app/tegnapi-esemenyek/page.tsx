@@ -444,7 +444,7 @@ export default function TegnapiEsemenyekPage() {
                                   <p className="text-xs text-gray-600 dark:text-slate-300 mb-1">
                                     #{userStats.rank} • {userStats.points} pont • {userStats.credits} kredit{" "}
                                     {movement === "up" ? (
-                                      <span className="text-red-600 dark:text-red-400">⬆</span>
+                                      <span className="text-green-600 dark:text-green-400">⬆</span>
                                     ) : movement === "down" ? (
                                       <span className="text-red-600 dark:text-red-400">⬇</span>
                                     ) : (

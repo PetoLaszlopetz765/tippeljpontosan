@@ -323,44 +323,52 @@ export default function AdminPage() {
             </Link>
           </div>
 
-          {/* Adat export */}
-          <div className="bg-white rounded-2xl shadow-sm border border-indigo-300 p-8">
-            <h2 className="text-xl font-extrabold text-indigo-800 mb-4">📤 Adat export (Excel)</h2>
-            <p className="text-gray-700 mb-4">
-              Letölti a fő táblák teljes tartalmát egy .xlsx fájlba (Setting, User, InviteCode, Event, Bet, CreditPool, DailyPool, ChatMessage).
+          {/* Felhasználó kezelés */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-purple-300 transition">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-5xl">👥</div>
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                Felhasználó kezelés
+              </h2>
+            </div>
+            <p className="text-gray-700 mb-6">
+              Új felhasználókat hozhatsz létre és kezelheted azok szerepkörét.
             </p>
-            <button
-              onClick={handleExport}
-              disabled={exportLoading}
-              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
-                exportLoading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-700 hover:bg-indigo-800"
-              }`}
+            <Link
+              href="/admin/users"
+              className="inline-flex items-center justify-center w-full sm:w-auto bg-purple-700 hover:bg-purple-800 text-white font-bold px-5 py-2 rounded-xl shadow"
             >
-              {exportLoading ? "Export folyamatban..." : "Excel export letöltése"}
-            </button>
+              Felhasználók megnyitása
+            </Link>
           </div>
 
-          {/* Adat import */}
-          <div className="bg-white rounded-2xl shadow-sm border border-amber-300 p-8">
-            <h2 className="text-xl font-extrabold text-amber-800 mb-4">📥 Adat import (Excel)</h2>
+          {/* Kezdő kredit beállítás */}
+          <div className="bg-white rounded-2xl shadow-sm border border-emerald-300 p-8">
+            <h2 className="text-xl font-extrabold text-emerald-800 mb-4">🪙 Kezdő kredit (regisztrációhoz)</h2>
             <p className="text-gray-700 mb-4">
-              Korábban exportált .xlsx fájl visszatöltése. A meglévő sorokat frissíti, a hiányzókat létrehozza.
+              Ezt az összeget kapja minden új felhasználó a regisztrációkor.
             </p>
-            <input
-              type="file"
-              accept=".xlsx"
-              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mb-3"
-            />
-            <button
-              onClick={handleImport}
-              disabled={importLoading || !importFile}
-              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
-                importLoading || !importFile ? "bg-amber-400 cursor-not-allowed" : "bg-amber-700 hover:bg-amber-800"
-              }`}
-            >
-              {importLoading ? "Import folyamatban..." : "Excel import indítása"}
-            </button>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-900">Kezdő kredit</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={initialCreditsEdit}
+                  onChange={(e) => setInitialCreditsEdit(e.target.value.replace(/[^0-9]/g, ""))}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mt-1"
+                  placeholder="0"
+                />
+              </div>
+              <button
+                onClick={handleInitialCreditsUpdate}
+                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 rounded-xl shadow"
+              >
+                Mentés
+              </button>
+              <p className="text-sm text-gray-600">Jelenlegi kezdő kredit: {initialCredits}</p>
+            </div>
           </div>
 
           {/* Backup feltöltés Google Drive-ra */}
@@ -434,35 +442,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Kezdő kredit beállítás */}
-          <div className="bg-white rounded-2xl shadow-sm border border-emerald-300 p-8">
-            <h2 className="text-xl font-extrabold text-emerald-800 mb-4">🪙 Kezdő kredit (regisztrációhoz)</h2>
-            <p className="text-gray-700 mb-4">
-              Ezt az összeget kapja minden új felhasználó a regisztrációkor.
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-gray-900">Kezdő kredit</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={initialCreditsEdit}
-                  onChange={(e) => setInitialCreditsEdit(e.target.value.replace(/[^0-9]/g, ""))}
-                  onFocus={(e) => e.target.select()}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mt-1"
-                  placeholder="0"
-                />
-              </div>
-              <button
-                onClick={handleInitialCreditsUpdate}
-                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 rounded-xl shadow"
-              >
-                Mentés
-              </button>
-              <p className="text-sm text-gray-600">Jelenlegi kezdő kredit: {initialCredits}</p>
-            </div>
-          </div>
-
           {/* Meghívókódok külön oldalra */}
           <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-8 mb-8 flex flex-col hover:shadow-lg hover:border-purple-400 transition">
             <h2 className="text-xl font-extrabold text-blue-800 mb-4">Meghívókódok kezelése</h2>
@@ -475,23 +454,44 @@ export default function AdminPage() {
             </Link>
           </div>
 
-          {/* Felhasználó kezelés */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-purple-300 transition">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-5xl">👥</div>
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                Felhasználó kezelés
-              </h2>
-            </div>
-            <p className="text-gray-700 mb-6">
-              Új felhasználókat hozhatsz létre és kezelheted azok szerepkörét.
+          {/* Adat export */}
+          <div className="bg-white rounded-2xl shadow-sm border border-indigo-300 p-8">
+            <h2 className="text-xl font-extrabold text-indigo-800 mb-4">📤 Adat export (Excel)</h2>
+            <p className="text-gray-700 mb-4">
+              Letölti a fő táblák teljes tartalmát egy .xlsx fájlba (Setting, User, InviteCode, Event, Bet, CreditPool, DailyPool, ChatMessage).
             </p>
-            <Link
-              href="/admin/users"
-              className="inline-flex items-center justify-center w-full sm:w-auto bg-purple-700 hover:bg-purple-800 text-white font-bold px-5 py-2 rounded-xl shadow"
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
+                exportLoading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-700 hover:bg-indigo-800"
+              }`}
             >
-              Felhasználók megnyitása
-            </Link>
+              {exportLoading ? "Export folyamatban..." : "Excel export letöltése"}
+            </button>
+          </div>
+
+          {/* Adat import */}
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-300 p-8">
+            <h2 className="text-xl font-extrabold text-amber-800 mb-4">📥 Adat import (Excel)</h2>
+            <p className="text-gray-700 mb-4">
+              Korábban exportált .xlsx fájl visszatöltése. A meglévő sorokat frissíti, a hiányzókat létrehozza.
+            </p>
+            <input
+              type="file"
+              accept=".xlsx"
+              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mb-3"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importLoading || !importFile}
+              className={`w-full font-bold px-4 py-2 rounded-xl shadow text-white transition ${
+                importLoading || !importFile ? "bg-amber-400 cursor-not-allowed" : "bg-amber-700 hover:bg-amber-800"
+              }`}
+            >
+              {importLoading ? "Import folyamatban..." : "Excel import indítása"}
+            </button>
           </div>
         </div>
 
