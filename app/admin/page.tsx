@@ -304,6 +304,25 @@ export default function AdminPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Esemény kezelés */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-blue-300 transition">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-5xl">📅</div>
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                Esemény kezelés
+              </h2>
+            </div>
+            <p className="text-gray-700 mb-6">
+              Új eseményeket hozhatsz létre és az eredményeket felviheted.
+            </p>
+            <Link
+              href="/admin/events"
+              className="inline-flex items-center justify-center w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl shadow"
+            >
+              Események megnyitása
+            </Link>
+          </div>
+
           {/* Adat export */}
           <div className="bg-white rounded-2xl shadow-sm border border-indigo-300 p-8">
             <h2 className="text-xl font-extrabold text-indigo-800 mb-4">📤 Adat export (Excel)</h2>
@@ -442,25 +461,6 @@ export default function AdminPage() {
               </button>
               <p className="text-sm text-gray-600">Jelenlegi kezdő kredit: {initialCredits}</p>
             </div>
-          </div>
-
-          {/* Esemény kezelés */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg hover:border-blue-300 transition">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-5xl">📅</div>
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                Esemény kezelés
-              </h2>
-            </div>
-            <p className="text-gray-700 mb-6">
-              Új eseményeket hozhatsz létre és az eredményeket felviheted.
-            </p>
-            <Link
-              href="/admin/events"
-              className="inline-flex items-center justify-center w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl shadow"
-            >
-              Események megnyitása
-            </Link>
           </div>
 
           {/* Meghívókódok külön oldalra */}

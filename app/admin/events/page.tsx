@@ -114,6 +114,11 @@ export default function EventsAdminPage() {
     }
   }, [isClient]);
 
+  const visibleEvents = events.filter((event) => {
+    const closedWithoutResult = !isEventOpen(event.status) && event.finalHomeGoals === null && event.finalAwayGoals === null;
+    return !closedWithoutResult;
+  });
+
   function formatEventDateToInput(iso: string) {
     return new Date(iso)
       .toLocaleString("sv-SE", {
@@ -675,18 +680,18 @@ export default function EventsAdminPage() {
                 Létrehozott események
               </h2>
               <p className="text-sm text-gray-700">
-                Összesen: <span className="font-bold text-gray-900">{events.length}</span>
+                Összesen: <span className="font-bold text-gray-900">{visibleEvents.length}</span>
               </p>
             </div>
 
             <div className="mt-4 space-y-3">
-              {events.length === 0 && (
+              {visibleEvents.length === 0 && (
                 <p className="text-gray-800 font-semibold">
                   Még nincs esemény.
                 </p>
               )}
 
-              {events.map((e) => {
+              {visibleEvents.map((e) => {
                 const open = isEventOpen(e.status);
                 return (
                   <div
