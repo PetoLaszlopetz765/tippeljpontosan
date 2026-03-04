@@ -371,6 +371,18 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* Meghívókódok külön oldalra */}
+          <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-8 mb-8 flex flex-col hover:shadow-lg hover:border-purple-400 transition">
+            <h2 className="text-xl font-extrabold text-blue-800 mb-4">Meghívókódok kezelése</h2>
+            <p className="text-blue-700 mb-6">Új kód generálás, másolás, lista</p>
+            <Link
+              href="/admin/invite-codes"
+              className="inline-flex items-center justify-center w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl shadow"
+            >
+              Meghívókódok megnyitása
+            </Link>
+          </div>
+
           {/* Backup feltöltés Google Drive-ra */}
           <div className="bg-white rounded-2xl shadow-sm border border-teal-300 p-8">
             <h2 className="text-xl font-extrabold text-teal-800 mb-4">☁️ Backup feltöltés Google Drive-ra</h2>
@@ -440,18 +452,6 @@ export default function AdminPage() {
                 Jelenlegi: Napi {pool.totalDaily} kredit | Bajnoki {pool.totalChampionship} kredit
               </p>
             </div>
-          </div>
-
-          {/* Meghívókódok külön oldalra */}
-          <div className="bg-white rounded-2xl shadow-sm border border-blue-300 p-8 mb-8 flex flex-col hover:shadow-lg hover:border-purple-400 transition">
-            <h2 className="text-xl font-extrabold text-blue-800 mb-4">Meghívókódok kezelése</h2>
-            <p className="text-blue-700 mb-6">Új kód generálás, másolás, lista</p>
-            <Link
-              href="/admin/invite-codes"
-              className="inline-flex items-center justify-center w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl shadow"
-            >
-              Meghívókódok megnyitása
-            </Link>
           </div>
 
           {/* Adat export */}
