@@ -52,14 +52,36 @@ function getBudapestHourMinute(date: Date) {
 function isWithinDailyBackupWindowBudapest(date: Date) {
   const { hour, minute } = getBudapestHourMinute(date);
 
-  const isLateBeforeMidnight = hour === 23 && minute >= 55;
-  const isJustAfterMidnightDelay = hour === 0 && minute <= 5;
+  const isLateBeforeMidnight = hour === 23 && minute >= 45;
+  const isJustAfterMidnightDelay = hour === 0 && minute <= 20;
 
   return {
     allowed: isLateBeforeMidnight || isJustAfterMidnightDelay,
     hour,
     minute,
   };
+}
+
+function getBudapestDateKey(date: Date, treatPostMidnightAsPreviousDay = false) {
+  let baseDate = date;
+  if (treatPostMidnightAsPreviousDay) {
+    const { hour } = getBudapestHourMinute(date);
+    if (hour === 0) {
+      baseDate = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+    }
+  }
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Budapest",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(baseDate);
+
+  const year = parts.find((p) => p.type === "year")?.value ?? "0000";
+  const month = parts.find((p) => p.type === "month")?.value ?? "00";
+  const day = parts.find((p) => p.type === "day")?.value ?? "00";
+  return `${year}-${month}-${day}`;
 }
 
 function assertCronSecret(req: NextRequest) {
@@ -197,16 +219,35 @@ export async function GET(req: NextRequest) {
 
     if (!windowCheck.allowed) {
       return NextResponse.json({
-        message: "Cron futás kihagyva: időablakon kívül (elvárt: 23:55-23:59 vagy 00:00-00:05 Europe/Budapest).",
+        message: "Cron futás kihagyva: időablakon kívül (elvárt: 23:45-23:59 vagy 00:00-00:20 Europe/Budapest).",
         budapestTime: `${String(windowCheck.hour).padStart(2, "0")}:${String(windowCheck.minute).padStart(2, "0")}`,
         utcNow: now.toISOString(),
       });
     }
 
+    const backupDayKey = getBudapestDateKey(now, true);
+    const dedupKey = "auto_drive_backup_last_date";
+
+    const lastRun = await prisma.setting.findUnique({ where: { key: dedupKey } });
+    if (lastRun?.value === backupDayKey) {
+      return NextResponse.json({
+        message: "Automatikus backup már lefutott erre a budapesti napra.",
+        backupDayKey,
+      });
+    }
+
     const uploadResult = await uploadBackupWorkbookToDrive();
+
+    await prisma.setting.upsert({
+      where: { key: dedupKey },
+      update: { value: backupDayKey },
+      create: { key: dedupKey, value: backupDayKey },
+    });
+
     return NextResponse.json({
       message: "Automatikus backup sikeresen feltöltve Google Drive-ra.",
       file: uploadResult,
+      backupDayKey,
     });
   } catch (err: any) {
     const apiStatus = Number(err?.response?.status) || 500;
