@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/events/auto-close",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/admin/backup/upload-drive",
       "schedule": "59 21 * * *"
     },
