@@ -54,7 +54,6 @@ export default function EsemenyekPage() {
   const [allVisibleBets, setAllVisibleBets] = useState<VisibleBet[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -63,12 +62,10 @@ export default function EsemenyekPage() {
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     const storedUserId = sessionStorage.getItem("userId");
-    const storedRole = sessionStorage.getItem("role");
 
     if (storedUserId) {
       setCurrentUserId(Number(storedUserId));
     }
-    setIsAdmin((storedRole || "").toUpperCase() === "ADMIN");
 
     if (!token) {
       window.location.href = "/login";
@@ -247,7 +244,7 @@ export default function EsemenyekPage() {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
               const eventBets = allVisibleBets.filter((bet) => bet.eventId === event.id);
-              const canSeeAllBets = isAdmin || Boolean(myBet);
+              const canSeeAllBets = Boolean(myBet);
 
               return (
                 <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm p-4 sm:p-5">
