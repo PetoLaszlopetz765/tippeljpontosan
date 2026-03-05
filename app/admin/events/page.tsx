@@ -115,10 +115,9 @@ export default function EventsAdminPage() {
     }
   }, [isClient]);
 
-  const visibleEvents = events.filter((event) => {
-    const closedWithoutResult = !isEventOpen(event.status) && event.finalHomeGoals === null && event.finalAwayGoals === null;
-    return !closedWithoutResult;
-  });
+  const visibleEvents = events.filter(
+    (event) => event.finalHomeGoals === null && event.finalAwayGoals === null
+  );
 
   const reopenableEvents = events.filter(
     (event) => !isEventOpen(event.status) && event.finalHomeGoals === null && event.finalAwayGoals === null

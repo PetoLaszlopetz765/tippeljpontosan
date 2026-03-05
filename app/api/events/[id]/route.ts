@@ -86,6 +86,22 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       return NextResponse.json({ message: "Érvénytelen kezdési időpont" }, { status: 400 });
     }
 
+    const existingEvent = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { finalHomeGoals: true, finalAwayGoals: true },
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json({ message: "Esemény nem található" }, { status: 404 });
+    }
+
+    if (existingEvent.finalHomeGoals !== null || existingEvent.finalAwayGoals !== null) {
+      return NextResponse.json(
+        { message: "Végeredménnyel rendelkező eseményt nem lehet módosítani." },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.event.update({
       where: { id: eventId },
       data: {

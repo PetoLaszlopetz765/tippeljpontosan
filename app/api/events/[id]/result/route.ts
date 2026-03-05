@@ -93,20 +93,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       );
     }
 
-    // Automatikus lezárás logika: 2 órával a kickoffTime előtt, de ha már lezárt az esemény, akkor engedjük
-    const kickoffTime = new Date(eventToCheck.kickoffTime);
-    const twoHoursBeforeKickoff = new Date(kickoffTime.getTime() - 2 * 60 * 60 * 1000);
-    const now = new Date();
-
-    // Ha még nem múlt el a 2 órás határidő, csak akkor tiltsuk, ha az esemény nincs lezárva
-    if (now < twoHoursBeforeKickoff && eventToCheck.status !== "CLOSED" && eventToCheck.status !== "LEZÁRT") {
-      return NextResponse.json(
-        { message: "Még túl korai az eredmény beírásához. Legalább 2 órával a meccs előtt lehet lezárni, vagy zárd le az eseményt előbb!" },
-        { status: 403 }
-      );
-    }
-
-    // Ha nem lezárt az esemény, akkor lezárjuk
+    // Ha nyitott az esemény, eredmény mentése előtt lezárjuk, hogy ne lehessen rá tovább tippelni.
     let event = eventToCheck;
     if (event.status !== "CLOSED" && event.status !== "LEZÁRT") {
       event = await prisma.event.update({
@@ -115,7 +102,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
           status: "CLOSED",
         },
       });
-      console.log("✓ Event auto-closed due to time limit");
+      console.log("✓ Event closed before saving result");
     }
 
     // Esemény frissítése az eredménnyel

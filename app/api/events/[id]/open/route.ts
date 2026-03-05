@@ -29,7 +29,12 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       return NextResponse.json({ message: "Érvénytelen token" }, { status: 401 });
     }
 
-    if (decoded.role !== "ADMIN") {
+    const adminUser = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { role: true },
+    });
+
+    if (!adminUser || adminUser.role !== "ADMIN") {
       return NextResponse.json({ message: "Csak admin nyithat vissza eseményt" }, { status: 403 });
     }
 
@@ -41,6 +46,13 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     if (event.finalHomeGoals !== null || event.finalAwayGoals !== null) {
       return NextResponse.json(
         { message: "Eredménnyel rendelkező eseményt nem lehet visszanyitni." },
+        { status: 400 }
+      );
+    }
+
+    if (event.status === "OPEN" || event.status === "NYITOTT") {
+      return NextResponse.json(
+        { message: "Az esemény már nyitott." },
         { status: 400 }
       );
     }
