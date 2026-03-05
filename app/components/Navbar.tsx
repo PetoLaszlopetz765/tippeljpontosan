@@ -146,7 +146,7 @@ export default function Navbar() {
 
   return (
     <header className="w-full bg-white dark:bg-slate-900 shadow-md border-b border-gray-200 dark:border-slate-800">
-      <nav className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+      <nav className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
         <div className="flex items-center gap-4">
           <Link href="/" className="text-lg font-bold text-green-700">
             ⚽ Tippelde
@@ -156,7 +156,7 @@ export default function Navbar() {
           )}
         </div>
         {/* Desktop menu */}
-        <div className="hidden md:flex gap-4 text-sm font-medium">
+        <div className="hidden lg:flex ml-auto items-center justify-end gap-4 text-sm font-medium whitespace-nowrap">
           {!isClient ? (
             null
           ) : isLoggedIn && role === "ADMIN" ? (
@@ -252,7 +252,7 @@ export default function Navbar() {
           )}
         </div>
         {/* Hamburger icon for mobile */}
-        <div className="md:hidden flex items-center">
+        <div className="lg:hidden flex items-center ml-auto">
           <button onClick={() => setMobileMenuOpen((v) => !v)} aria-label="Menü" className="focus:outline-none">
             <HamburgerIcon open={mobileMenuOpen} />
           </button>
@@ -262,7 +262,7 @@ export default function Navbar() {
           <div className="fixed inset-0 z-40 bg-black bg-opacity-40" onClick={() => setMobileMenuOpen(false)}></div>
         )}
         {/* Mobile menu drawer */}
-        <div className={`fixed top-0 right-0 z-50 h-full w-64 bg-white dark:bg-slate-900 shadow-lg transform transition-transform duration-300 md:hidden ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className={`fixed top-0 right-0 z-50 h-full w-64 bg-white dark:bg-slate-900 shadow-lg transform transition-transform duration-300 lg:hidden ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="flex flex-col gap-6 p-6 pt-10 text-lg font-medium">
             {isClient && (
               <button

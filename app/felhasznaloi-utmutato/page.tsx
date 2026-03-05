@@ -25,6 +25,8 @@ export default function FelhasznaloiUtmutatoPage() {
               <li>Bejelentkezés után a felső menüben látod a felhasználónevedet.</li>
               <li>A <span className="font-semibold">Profilom</span> oldalon követheted a pontjaidat és kreditjeidet.</li>
               <li>Ha kijelentkezel vagy lejár a session, a rendszer visszairányít a belépéshez.</li>
+              <li>A navbar jobb oldalán témaváltó gomb van: <span className="font-semibold">Rendszer</span> → <span className="font-semibold">Sötét</span> → <span className="font-semibold">Világos</span>.</li>
+              <li>A választott megjelenési mód mentésre kerül, így következő megnyitáskor is megmarad.</li>
             </ul>
           </section>
 
