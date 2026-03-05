@@ -353,7 +353,7 @@ export default function TegnapiEsemenyekPage() {
                                         <span className="ml-2 text-xs font-medium text-gray-600 dark:text-slate-300">
                                           • #{userStats.rank} • {userStats.points} pont • {userStats.credits} kredit{" "}
                                           {movement === "up" ? (
-                                            <span className="text-red-600 dark:text-red-400">⬆</span>
+                                            <span className="text-green-600 dark:text-green-400">⬆</span>
                                           ) : movement === "down" ? (
                                             <span className="text-red-600 dark:text-red-400">⬇</span>
                                           ) : (
