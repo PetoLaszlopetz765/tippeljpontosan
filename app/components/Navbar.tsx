@@ -176,6 +176,9 @@ export default function Navbar() {
               <Link href="/szabalyzat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold">
                 Szabályzat
               </Link>
+              <Link href="/felhasznaloi-utmutato" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold">
+                Felhasználói útmutató
+              </Link>
               <Link href="/ranglista" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-300 transition font-semibold">
                 🏆 Ranglista
               </Link>
@@ -206,6 +209,9 @@ export default function Navbar() {
               <Link href="/szabalyzat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
                 Szabályzat
               </Link>
+              <Link href="/felhasznaloi-utmutato" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
+                Felhasználói útmutató
+              </Link>
               <Link href="/profil" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-300 transition">
                 Profilom
               </Link>
@@ -226,6 +232,9 @@ export default function Navbar() {
             <>
               <Link href="/szabalyzat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
                 Szabályzat
+              </Link>
+              <Link href="/felhasznaloi-utmutato" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
+                Felhasználói útmutató
               </Link>
               <Link href="/login" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition">
                 Bejelentkezés
@@ -284,6 +293,9 @@ export default function Navbar() {
                 <Link href="/szabalyzat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   Szabályzat
                 </Link>
+                <Link href="/felhasznaloi-utmutato" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
+                  Felhasználói útmutató
+                </Link>
                 <Link href="/ranglista" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-300 transition font-semibold" onClick={() => setMobileMenuOpen(false)}>
                   🏆 Ranglista
                 </Link>
@@ -314,6 +326,9 @@ export default function Navbar() {
                 <Link href="/szabalyzat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
                   Szabályzat
                 </Link>
+                <Link href="/felhasznaloi-utmutato" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Felhasználói útmutató
+                </Link>
                 <Link href="/profil" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-300 transition" onClick={() => setMobileMenuOpen(false)}>
                   Profilom
                 </Link>
@@ -334,6 +349,9 @@ export default function Navbar() {
               <>
                 <Link href="/szabalyzat" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
                   Szabályzat
+                </Link>
+                <Link href="/felhasznaloi-utmutato" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
+                  Felhasználói útmutató
                 </Link>
                 <Link href="/login" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition" onClick={() => setMobileMenuOpen(false)}>
                   Bejelentkezés
