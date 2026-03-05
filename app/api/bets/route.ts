@@ -91,25 +91,8 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const autoCloseThreshold = new Date(Date.now() + 120 * 60 * 1000);
-
-      const shouldBeClosedIds = events
-        .filter(
-          (event) =>
-            (event.status === "OPEN" || event.status === "NYITOTT") &&
-            new Date(event.kickoffTime).getTime() <= autoCloseThreshold.getTime()
-        )
-        .map((event) => event.id);
-
-      if (shouldBeClosedIds.length > 0) {
-        await tx.event.updateMany({
-          where: { id: { in: shouldBeClosedIds } },
-          data: { status: "CLOSED" },
-        });
-      }
-
       const blockedEvent = events.find((event) => {
-        const isClosed = event.status === "CLOSED" || event.status === "LEZÁRT" || shouldBeClosedIds.includes(event.id);
+        const isClosed = event.status === "CLOSED" || event.status === "LEZÁRT";
         return isClosed;
       });
 
