@@ -244,7 +244,8 @@ export default function EsemenyekPage() {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
               const eventBets = allVisibleBets.filter((bet) => bet.eventId === event.id);
-              const canSeeAllBets = Boolean(myBet);
+              const isOpen = event.status === "OPEN" || event.status === "NYITOTT";
+              const canSeeAllBets = !isOpen || Boolean(myBet);
 
               return (
                 <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm p-4 sm:p-5">

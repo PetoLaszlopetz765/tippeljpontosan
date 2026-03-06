@@ -20,16 +20,25 @@ export async function GET(req: NextRequest) {
       select: { eventId: true },
     });
 
-    const userEventIds = Array.from(new Set(myBets.map((bet) => bet.eventId)));
+    const myEventIds = Array.from(new Set(myBets.map((bet) => bet.eventId)));
 
-    if (userEventIds.length === 0) {
+    const closedEvents = await prisma.event.findMany({
+      where: { status: { in: ["CLOSED", "LEZÁRT"] } },
+      select: { id: true },
+    });
+
+    const closedEventIds = closedEvents.map((event) => event.id);
+
+    const visibleEventIds = Array.from(new Set([...myEventIds, ...closedEventIds]));
+
+    if (visibleEventIds.length === 0) {
       return NextResponse.json({ bets: [], userEventIds: [] });
     }
 
     // Minden tipp lekérése, admin tippek nélkül, csak bejelentkezett felhasználónak
     const bets = await prisma.bet.findMany({
       where: {
-        eventId: { in: userEventIds },
+        eventId: { in: visibleEventIds },
         user: {
           username: {
             not: "admin"
@@ -99,7 +108,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ bets, userEventIds });
+    return NextResponse.json({ bets, userEventIds: visibleEventIds });
   } catch (err) {
     console.error("All bets error:", err);
     return NextResponse.json(

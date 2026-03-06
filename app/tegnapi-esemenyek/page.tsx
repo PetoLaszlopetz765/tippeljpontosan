@@ -245,6 +245,8 @@ export default function TegnapiEsemenyekPage() {
               const poolTotal = (event.dailyPool?.totalDaily || 0) + (event.dailyPool?.carriedFromPrevious || 0);
               const myBet = myBetsByEventId.get(event.id);
               const eventBets = allVisibleBets.filter((bet) => bet.eventId === event.id);
+              const isOpen = event.status === "OPEN" || event.status === "NYITOTT";
+              const canSeeAllBets = !isOpen || Boolean(myBet);
               const nonAdminBets = eventBets.filter((bet) => bet.user.username.toLowerCase() !== "admin");
               const winners = nonAdminBets.filter((bet) => bet.pointsAwarded === 6);
               const winCount = winners.length;
@@ -308,7 +310,11 @@ export default function TegnapiEsemenyekPage() {
 
                   <div className="mt-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 p-3">
                     <p className="text-xs text-blue-700 dark:text-blue-200 mb-2">Összes tipp erre az eseményre</p>
-                    {eventBets.length === 0 ? (
+                    {!canSeeAllBets ? (
+                      <p className="font-semibold text-gray-700 dark:text-slate-300">
+                        Mások tippjeit akkor látod, ha már tippeltél erre az eseményre.
+                      </p>
+                    ) : eventBets.length === 0 ? (
                       <p className="font-semibold text-gray-700 dark:text-slate-300">Még nincs leadott tipp.</p>
                     ) : (
                       <>

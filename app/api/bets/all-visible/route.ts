@@ -14,8 +14,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Érvénytelen token" }, { status: 401 });
     }
 
+    const userId = decoded.userId;
+
+    const myBets = await prisma.bet.findMany({
+      where: { userId },
+      select: { eventId: true },
+    });
+
+    const myEventIds = Array.from(new Set(myBets.map((bet) => bet.eventId)));
+
     const bets = await prisma.bet.findMany({
       where: {
+        OR: [
+          { eventId: { in: myEventIds.length > 0 ? myEventIds : [-1] } },
+          { event: { status: { in: ["CLOSED", "LEZÁRT"] } } },
+        ],
         user: {
           username: {
             not: "admin",
