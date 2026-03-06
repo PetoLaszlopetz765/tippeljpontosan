@@ -10,6 +10,8 @@ type LeagueOption = {
 
 type Scope = "elite" | "international" | "all";
 
+const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
+
 const EMERGENCY_LEAGUES: LeagueOption[] = [
   { id: "47", name: "Premier League", country: "ENG" },
   { id: "54", name: "Bundesliga", country: "DEU" },
@@ -144,6 +146,37 @@ function mergeLeagueLists(...lists: LeagueOption[][]): LeagueOption[] {
   return Array.from(merged.values());
 }
 
+async function fetchFootballDataLeagues(apiKey: string): Promise<LeagueOption[]> {
+  const res = await fetch(`${FOOTBALL_DATA_BASE_URL}/competitions`, {
+    cache: "no-store",
+    headers: {
+      "X-Auth-Token": apiKey,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`football-data competitions hiba: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const competitions = Array.isArray(data?.competitions) ? data.competitions : [];
+
+  return competitions
+    .map((row: Record<string, unknown>) => {
+      const code = toStringValue(row.code);
+      const id = code || toStringValue(row.id);
+      const name = toStringValue(row.name);
+      const area = row.area && typeof row.area === "object" ? (row.area as Record<string, unknown>) : null;
+      const country =
+        (area && (toStringValue(area.code) || toStringValue(area.name))) ||
+        "Egyéb";
+
+      if (!id || !name) return null;
+      return { id, name, country } as LeagueOption;
+    })
+    .filter((item: LeagueOption | null): item is LeagueOption => Boolean(item));
+}
+
 export async function GET(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
@@ -173,12 +206,13 @@ export async function GET(req: NextRequest) {
           ? "all"
           : "elite";
 
+    const footballDataKey = process.env.FOOTBALL_DATA_API_KEY;
     const rapidApiKey = process.env.RAPIDAPI_KEY || process.env.API_FOOTBALL_KEY;
     const rapidApiHost = process.env.RAPIDAPI_HOST || "free-api-live-football-data.p.rapidapi.com";
 
-    if (!rapidApiKey) {
+    if (!footballDataKey && !rapidApiKey) {
       return NextResponse.json(
-        { message: "Hiányzik a RAPIDAPI_KEY (vagy API_FOOTBALL_KEY) környezeti változó." },
+        { message: "Hiányzik a FOOTBALL_DATA_API_KEY vagy RAPIDAPI_KEY (API_FOOTBALL_KEY) környezeti változó." },
         { status: 500 }
       );
     }
@@ -187,7 +221,15 @@ export async function GET(req: NextRequest) {
     let lastStatus: number | null = null;
     let sourceWarning: string | null = null;
 
-    if (isFreeLiveHost(rapidApiHost)) {
+    if (footballDataKey) {
+      try {
+        parsedLeagues = await fetchFootballDataLeagues(footballDataKey);
+      } catch (error) {
+        sourceWarning = "A football-data.org forrás nem elérhető, visszaállunk a RapidAPI forrásra.";
+      }
+    }
+
+    if (parsedLeagues.length === 0 && rapidApiKey && isFreeLiveHost(rapidApiHost)) {
       const fetchEndpoint = async (endpoint: string) => {
         const res = await fetch(`https://${rapidApiHost}${endpoint}`, {
           cache: "no-store",
@@ -224,7 +266,7 @@ export async function GET(req: NextRequest) {
         .filter((row: LeagueOption | null): row is LeagueOption => Boolean(row));
 
       parsedLeagues = mergeLeagueLists(mappedPopular, mappedAll);
-    } else {
+    } else if (parsedLeagues.length === 0 && rapidApiKey) {
       const customEndpointsRaw = process.env.RAPIDAPI_LEAGUES_ENDPOINTS || process.env.RAPIDAPI_LEAGUES_ENDPOINT;
       const endpoints = customEndpointsRaw
         ? customEndpointsRaw
@@ -351,7 +393,7 @@ export async function GET(req: NextRequest) {
     const hasHungarianLeague = parsedLeagues.some((league) => {
       const name = normalizeCompetitionName(league);
       const country = (league.country || "").toLowerCase();
-      return country === "hun" || name.includes("nb i") || name.includes("otp bank");
+      return country === "hun" || country === "hu" || name.includes("nb i") || name.includes("otp bank");
     });
 
     const noHungarianLeagueWarning = hasHungarianLeague

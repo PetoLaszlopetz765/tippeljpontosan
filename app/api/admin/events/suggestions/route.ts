@@ -16,6 +16,7 @@ type SuggestionsCacheEntry = {
   updatedAt: number;
 };
 
+const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SUGGESTIONS_CACHE_TTL_MS = 15 * 60 * 1000;
 const suggestionsCache = new Map<string, SuggestionsCacheEntry>();
 
@@ -169,6 +170,66 @@ function extractSuggestions(payload: unknown, fallbackLeagueLabel: string): Sugg
   return result;
 }
 
+function addDaysIso(day: string, days: number): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function fetchFootballDataMatchesByRange(
+  apiKey: string,
+  competitionCode: string,
+  dateFrom: string,
+  dateTo: string
+): Promise<SuggestionRow[]> {
+  const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${encodeURIComponent(competitionCode)}/matches?dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
+
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "X-Auth-Token": apiKey,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`football-data matches hiba: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const matches = Array.isArray(data?.matches) ? data.matches : [];
+
+  return matches
+    .map((row: Record<string, unknown>) => {
+      const id = toStringValue(row.id);
+      const utcDate = toStringValue(row.utcDate);
+
+      const homeObj = row.homeTeam && typeof row.homeTeam === "object"
+        ? (row.homeTeam as Record<string, unknown>)
+        : null;
+      const awayObj = row.awayTeam && typeof row.awayTeam === "object"
+        ? (row.awayTeam as Record<string, unknown>)
+        : null;
+      const competitionObj = row.competition && typeof row.competition === "object"
+        ? (row.competition as Record<string, unknown>)
+        : null;
+
+      const homeTeam = toStringValue(homeObj?.name);
+      const awayTeam = toStringValue(awayObj?.name);
+      const league = toStringValue(competitionObj?.name) || "Ismeretlen liga";
+
+      if (!homeTeam || !awayTeam || !utcDate) return null;
+
+      return {
+        externalId: id || `${homeTeam}-${awayTeam}-${utcDate}`,
+        homeTeam,
+        awayTeam,
+        kickoffUtc: utcDate,
+        league,
+      } as SuggestionRow;
+    })
+    .filter((item: SuggestionRow | null): item is SuggestionRow => Boolean(item));
+}
+
 export async function GET(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
@@ -200,12 +261,13 @@ export async function GET(req: NextRequest) {
       requestedDayParam && requestedDayParam >= tomorrowBudapest
         ? requestedDayParam
         : tomorrowBudapest;
+    const footballDataKey = process.env.FOOTBALL_DATA_API_KEY;
     const rapidApiKey = process.env.RAPIDAPI_KEY || process.env.API_FOOTBALL_KEY;
     const rapidApiHost = process.env.RAPIDAPI_HOST || "free-api-live-football-data.p.rapidapi.com";
 
-    if (!rapidApiKey) {
+    if (!footballDataKey && !rapidApiKey) {
       return NextResponse.json(
-        { message: "Hiányzik a RAPIDAPI_KEY (vagy API_FOOTBALL_KEY) környezeti változó." },
+        { message: "Hiányzik a FOOTBALL_DATA_API_KEY vagy RAPIDAPI_KEY (API_FOOTBALL_KEY) környezeti változó." },
         { status: 500 }
       );
     }
@@ -229,7 +291,35 @@ export async function GET(req: NextRequest) {
     let gathered: SuggestionRow[] = [];
     let lastExternalStatus: number | null = null;
 
+    if (footballDataKey) {
+      try {
+        const selectedDayRows = await fetchFootballDataMatchesByRange(
+          footballDataKey,
+          leagueId,
+          requestedDayBudapest,
+          requestedDayBudapest
+        );
+
+        if (selectedDayRows.length > 0) {
+          gathered = selectedDayRows;
+        } else {
+          const endDay = addDaysIso(requestedDayBudapest, 14);
+          gathered = await fetchFootballDataMatchesByRange(
+            footballDataKey,
+            leagueId,
+            requestedDayBudapest,
+            endDay
+          );
+        }
+      } catch (error) {
+        // Néma fallback RapidAPI-ra
+      }
+    }
+
     for (const template of endpointTemplates) {
+      if (gathered.length > 0 || !rapidApiKey) break;
+      const rapidKey = rapidApiKey;
+
       const endpoint = template
         .replaceAll("{leagueId}", encodeURIComponent(leagueId))
         .replaceAll("{dayBudapest}", encodeURIComponent(requestedDayBudapest))
@@ -241,7 +331,7 @@ export async function GET(req: NextRequest) {
       const res = await fetch(url, {
         cache: "no-store",
         headers: {
-          "x-rapidapi-key": rapidApiKey,
+          "x-rapidapi-key": rapidKey,
           "x-rapidapi-host": rapidApiHost,
         },
       });
