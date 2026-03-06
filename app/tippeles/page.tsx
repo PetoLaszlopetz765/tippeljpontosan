@@ -28,6 +28,10 @@ function isEventOpen(status: Event["status"]) {
   return status === "OPEN" || status === "NYITOTT";
 }
 
+function isEventBettable(event: Event) {
+  return isEventOpen(event.status) && new Date(event.kickoffTime).getTime() > Date.now();
+}
+
 export default function TippelesPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [bets, setBets] = useState<Record<number, BetInput>>({});
@@ -85,10 +89,16 @@ export default function TippelesPage() {
     }));
   }
 
-  const hasOpenEvent = useMemo(
-    () => events.some((e) => isEventOpen(e.status)),
-    [events]
+  const bettableEvents = useMemo(
+    () =>
+      events
+        .filter((event) => !(event.id in userBets))
+        .filter((event) => isEventBettable(event))
+        .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime()),
+    [events, userBets]
   );
+
+  const hasOpenEvent = bettableEvents.length > 0;
 
   async function reloadUserBets(token: string) {
     const betsRes = await fetch("/api/bets/my-bets", {
@@ -160,7 +170,7 @@ export default function TippelesPage() {
     e.preventDefault();
 
     // csak nyitott meccsek tippjeit küldjük
-    const openIds = new Set(events.filter((e) => isEventOpen(e.status)).map((e) => e.id));
+    const openIds = new Set(bettableEvents.map((e) => e.id));
 
     const payload = Object.entries(bets)
       .map(([eventId, bet]) => ({ eventId: Number(eventId), ...bet }))
@@ -176,7 +186,7 @@ export default function TippelesPage() {
 
   async function handleSingleSubmit(eventId: number) {
     const event = events.find((currentEvent) => currentEvent.id === eventId);
-    if (!event || !isEventOpen(event.status)) {
+    if (!event || !isEventBettable(event)) {
       setMessage("⚠️ Erre az eseményre már nem lehet tippelni.");
       return;
     }
@@ -211,9 +221,8 @@ export default function TippelesPage() {
             </div>
           )}
 
-          {events.filter(e => !(e.id in userBets)).map((event) => {
-            // Csak azokat az eseményeket mutatjuk, amikre MÉG NEM tippelt a user (nyitott vagy zárt is lehet)
-            const open = isEventOpen(event.status);
+          {bettableEvents.map((event) => {
+            const open = isEventBettable(event);
             const hasUserBet = false; // ezekre biztosan nem tippelt
 
             return (

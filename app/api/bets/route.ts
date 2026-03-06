@@ -93,11 +93,12 @@ export async function POST(req: NextRequest) {
 
       const blockedEvent = events.find((event) => {
         const isClosed = event.status === "CLOSED" || event.status === "LEZÁRT";
-        return isClosed;
+        const alreadyStarted = new Date(event.kickoffTime).getTime() <= Date.now();
+        return isClosed || alreadyStarted;
       });
 
       if (blockedEvent) {
-        throw new Error(`Ez az esemény már lezárt, nem lehet rá tippelni: ${blockedEvent.id}`);
+        throw new Error(`Ez az esemény már lezárt vagy elkezdődött, nem lehet rá tippelni: ${blockedEvent.id}`);
       }
 
       const eventById = new Map(events.map((event) => [event.id, event]));
