@@ -33,6 +33,7 @@ interface Bet {
     id: number;
     homeTeam: string;
     awayTeam: string;
+    league: string;
     kickoffTime: string;
     status: string;
     finalHomeGoals: number | null;
@@ -180,7 +181,7 @@ export default function RanglistaPage() {
     : (lastEvent?.dailyPool?.totalDaily || 0) + (lastEvent?.dailyPool?.carriedFromPrevious || 0);
 
   const nextEventLabel = nextEvent
-    ? `${nextEvent.homeTeam} – ${nextEvent.awayTeam}`
+    ? `${nextEvent.homeTeam} – ${nextEvent.awayTeam} (${nextEvent.league || "Ismeretlen liga"})`
     : "Nincs közelgő esemény";
 
   const nextEventTime = nextEvent
@@ -420,6 +421,7 @@ export default function RanglistaPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
                       <div>
                         <div className="text-lg font-bold text-purple-900">{event.homeTeam} – {event.awayTeam}</div>
+                        <div className="text-xs font-semibold text-indigo-700 mt-1">Liga: {event.league || "Ismeretlen liga"}</div>
                         <div className="text-sm text-gray-600 dark:text-slate-300">{new Date(event.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })}</div>
                       </div>
                       <div className="flex flex-col md:items-end gap-1">

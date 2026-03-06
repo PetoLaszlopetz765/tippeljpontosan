@@ -26,6 +26,7 @@ interface Bet {
     id: number;
     homeTeam: string;
     awayTeam: string;
+    league: string;
     kickoffTime: string;
     status: string;
     finalHomeGoals: number | null;
@@ -251,6 +252,9 @@ export default function ProfilPage() {
                             <p className="font-semibold text-gray-900">
                               {bet.event.homeTeam} – {bet.event.awayTeam}
                             </p>
+                            <p className="text-xs font-semibold text-indigo-700 mt-1">
+                              Liga: {bet.event.league || "Ismeretlen liga"}
+                            </p>
                             <p className="text-xs text-gray-600 mt-1">
                               {new Date(bet.event.kickoffTime).toLocaleString("hu-HU")}
                             </p>
@@ -307,7 +311,10 @@ export default function ProfilPage() {
                 {bets.map((bet) => (
                   <div key={bet.id} className="border border-purple-200 rounded-xl p-3 bg-purple-50/40">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-900 text-left">{bet.event.homeTeam} – {bet.event.awayTeam}</span>
+                      <div className="text-left">
+                        <span className="font-semibold text-gray-900">{bet.event.homeTeam} – {bet.event.awayTeam}</span>
+                        <div className="text-xs font-semibold text-indigo-700 mt-1">Liga: {bet.event.league || "Ismeretlen liga"}</div>
+                      </div>
                       <span className={`inline-block rounded px-2 py-1 text-xs font-bold text-right ${
                         bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
                         bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :

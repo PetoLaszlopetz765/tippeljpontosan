@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       return NextResponse.json({ message: "Csak admin módosíthat eseményt" }, { status: 403 });
     }
 
-    const { homeTeam, awayTeam, kickoffTime, creditCost } = await req.json();
+    const { homeTeam, awayTeam, kickoffTime, creditCost, league } = await req.json();
 
     if (!homeTeam || !awayTeam || !kickoffTime) {
       return NextResponse.json({ message: "Hiányzó kötelező mezők" }, { status: 400 });
@@ -107,6 +107,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       data: {
         homeTeam: String(homeTeam).trim(),
         awayTeam: String(awayTeam).trim(),
+        ...(typeof league === "string" && league.trim() ? { league: league.trim() } : {}),
         kickoffTime: kickoffUTC,
         creditCost: Math.trunc(parsedCreditCost),
       },

@@ -26,6 +26,7 @@ type EventItem = {
   id: number;
   homeTeam: string;
   awayTeam: string;
+  league: string;
   kickoffTime: string;
   status: string;
   finalHomeGoals: number | null;
@@ -255,9 +256,14 @@ export default function TegnapiEsemenyekPage() {
               return (
                 <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-slate-100 leading-tight">
-                      {event.homeTeam} – {event.awayTeam}
-                    </h2>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-slate-100 leading-tight">
+                        {event.homeTeam} – {event.awayTeam}
+                      </h2>
+                      <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mt-1">
+                        Liga: {event.league || "Ismeretlen liga"}
+                      </p>
+                    </div>
                     <span className="text-xs sm:text-sm font-semibold px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
                       {event.status}
                     </span>

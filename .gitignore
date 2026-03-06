@@ -33,3 +33,4 @@ logs/
 sportfogadas.git/
 public/thkk-banner.png
 
+.env*.local

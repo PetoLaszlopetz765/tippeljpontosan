@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     //   );
     // }
 
-    const { homeTeam, awayTeam, kickoffTime, status, creditCost } = await req.json();
+    const { homeTeam, awayTeam, kickoffTime, status, creditCost, league } = await req.json();
 
     // A kickoffTime stringet (pl. '2026-02-22T18:45') Europe/Budapest időzónaként értelmezzük, majd UTC-re konvertáljuk
     function parseBudapestToUTC(localDateTimeStr: string) {
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
       data: {
         homeTeam,
         awayTeam,
+        league: typeof league === "string" && league.trim() ? league.trim() : "Ismeretlen liga",
         kickoffTime: kickoffUTC,
         status: status || "OPEN",
         creditCost: creditCost || 100,

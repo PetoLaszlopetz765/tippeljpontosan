@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 interface Event {
   id: number;
   homeTeam: string;
   awayTeam: string;
+  league: string;
   kickoffTime: string;
   status: "OPEN" | "CLOSED" | "NYITOTT" | "LEZÁRT";
   creditCost: number;
@@ -21,6 +22,20 @@ interface Event {
   } | null;
 }
 
+interface ExternalSuggestion {
+  externalId: string;
+  homeTeam: string;
+  awayTeam: string;
+  kickoffUtc: string;
+  league: string;
+}
+
+interface LeagueOption {
+  id: string;
+  name: string;
+  country: string;
+}
+
 function isEventOpen(status: Event["status"]) {
   return status === "OPEN" || status === "NYITOTT";
 }
@@ -29,6 +44,7 @@ export default function EventsAdminPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
+  const [league, setLeague] = useState("");
   const [kickoffYear, setKickoffYear] = useState("");
   const [kickoffMonth, setKickoffMonth] = useState("");
   const [kickoffDay, setKickoffDay] = useState("");
@@ -51,9 +67,22 @@ export default function EventsAdminPage() {
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [editHomeTeam, setEditHomeTeam] = useState("");
   const [editAwayTeam, setEditAwayTeam] = useState("");
+  const [editLeague, setEditLeague] = useState("");
   const [editKickoffTime, setEditKickoffTime] = useState("");
   const [editCreditCost, setEditCreditCost] = useState("100");
   const [updateLoadingEventId, setUpdateLoadingEventId] = useState<number | null>(null);
+  const [selectedScope, setSelectedScope] = useState<"elite" | "international" | "all">("elite");
+  const [selectedLeagueId, setSelectedLeagueId] = useState("");
+  const [leagues, setLeagues] = useState<LeagueOption[]>([]);
+  const [loadingLeagues, setLoadingLeagues] = useState(false);
+  const [filterDayBudapest, setFilterDayBudapest] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString("sv-SE", { timeZone: "Europe/Budapest" });
+  });
+  const [suggestions, setSuggestions] = useState<ExternalSuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionKickoffOverrides, setSuggestionKickoffOverrides] = useState<Record<string, string>>({});
   const monthRef = useRef<HTMLInputElement | null>(null);
   const dayRef = useRef<HTMLInputElement | null>(null);
   const hourRef = useRef<HTMLInputElement | null>(null);
@@ -71,6 +100,13 @@ export default function EventsAdminPage() {
       nextRef.current.focus();
       nextRef.current.select();
     }
+  }
+
+  function toBudapestInputDateTime(isoUtc: string) {
+    return new Date(isoUtc)
+      .toLocaleString("sv-SE", { timeZone: "Europe/Budapest", hour12: false })
+      .replace(" ", "T")
+      .slice(0, 16);
   }
 
   useEffect(() => {
@@ -105,6 +141,126 @@ export default function EventsAdminPage() {
     }
   }
 
+  async function loadLeagues(scope: "elite" | "international" | "all") {
+    if (!token) return;
+
+    setLoadingLeagues(true);
+    setMessage("");
+
+    try {
+      const res = await fetch(`/api/admin/events/leagues?scope=${scope}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setMessage(data?.message || "✗ Nem sikerült betölteni a ligákat.");
+        setLeagues([]);
+        setSelectedLeagueId("");
+        return;
+      }
+
+      const data = await res.json();
+      const nextLeagues: LeagueOption[] = Array.isArray(data?.leagues) ? data.leagues : [];
+      setLeagues(nextLeagues);
+      setSelectedLeagueId(nextLeagues[0]?.id || "");
+
+      if (data?.warning) {
+        setMessage(`ℹ️ ${data.warning}`);
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("✗ Hálózati hiba történt a ligák lekérésekor.");
+      setLeagues([]);
+      setSelectedLeagueId("");
+    } finally {
+      setLoadingLeagues(false);
+    }
+  }
+
+  async function loadSuggestions() {
+    if (!token) {
+      setMessage("✗ Nincs bejelentkezve!");
+      return;
+    }
+
+    setLoadingSuggestions(true);
+    setMessage("");
+
+    try {
+      if (!selectedLeagueId) {
+        setMessage("✗ Először válassz ligát.");
+        setSuggestions([]);
+        return;
+      }
+
+      const selectedLeagueName = leagues.find((l) => l.id === selectedLeagueId)?.name || "";
+      const params = new URLSearchParams({ leagueId: selectedLeagueId });
+      if (selectedLeagueName) {
+        params.set("leagueName", selectedLeagueName);
+      }
+      if (filterDayBudapest) {
+        params.set("dayBudapest", filterDayBudapest);
+      }
+
+      const res = await fetch(`/api/admin/events/suggestions?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setMessage(data?.message || "✗ Nem sikerült lekérni az eseményajánlókat.");
+        setSuggestions([]);
+        return;
+      }
+
+      const data = await res.json();
+      const nextSuggestions: ExternalSuggestion[] = Array.isArray(data?.suggestions) ? data.suggestions : [];
+      setSuggestions(nextSuggestions);
+
+      if (data?.warning) {
+        setMessage(`ℹ️ ${data.warning}`);
+      }
+
+      const overrides: Record<string, string> = {};
+      nextSuggestions.forEach((item) => {
+        const rowId = item.externalId || `${item.homeTeam}-${item.awayTeam}-${item.kickoffUtc}`;
+        overrides[rowId] = toBudapestInputDateTime(item.kickoffUtc);
+      });
+      setSuggestionKickoffOverrides(overrides);
+
+      if (!nextSuggestions.length) {
+        setMessage("ℹ️ Nincs találat ehhez a ligához.");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("✗ Hálózati hiba történt az API ajánlók lekérésekor.");
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }
+
+  function applySuggestionToForm(suggestion: ExternalSuggestion) {
+    const rowId = suggestion.externalId || `${suggestion.homeTeam}-${suggestion.awayTeam}-${suggestion.kickoffUtc}`;
+    const kickoffLocal = suggestionKickoffOverrides[rowId] || toBudapestInputDateTime(suggestion.kickoffUtc);
+    const [datePart, timePart] = kickoffLocal.split("T");
+    const [year = "", month = "", day = ""] = (datePart || "").split("-");
+    const [hour = "", minute = ""] = (timePart || "").split(":");
+
+    setHomeTeam(suggestion.homeTeam);
+    setAwayTeam(suggestion.awayTeam);
+    setLeague(suggestion.league);
+    setKickoffYear(year);
+    setKickoffMonth(month);
+    setKickoffDay(day);
+    setKickoffHour(hour);
+    setKickoffMinute(minute);
+    setMessage(`ℹ️ Ajánlás átmásolva az űrlapba: ${suggestion.homeTeam} - ${suggestion.awayTeam}. Mentéshez nyomd meg az Esemény mentése gombot.`);
+  }
+
   useEffect(() => {
     console.log("🔧 useEffect: isClient =", isClient);
     if (isClient) {
@@ -115,6 +271,11 @@ export default function EventsAdminPage() {
     }
   }, [isClient]);
 
+  useEffect(() => {
+    if (!token) return;
+    loadLeagues(selectedScope);
+  }, [token, selectedScope]);
+
   const visibleEvents = events.filter(
     (event) => event.finalHomeGoals === null && event.finalAwayGoals === null
   );
@@ -122,6 +283,18 @@ export default function EventsAdminPage() {
   const reopenableEvents = events.filter(
     (event) => !isEventOpen(event.status) && event.finalHomeGoals === null && event.finalAwayGoals === null
   );
+
+  const groupedLeagues = useMemo(() => {
+    const map = new Map<string, LeagueOption[]>();
+    leagues.forEach((league) => {
+      const country = league.country || "Egyéb";
+      if (!map.has(country)) {
+        map.set(country, []);
+      }
+      map.get(country)!.push(league);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "hu"));
+  }, [leagues]);
 
   function formatEventDateToInput(iso: string) {
     return new Date(iso)
@@ -137,6 +310,7 @@ export default function EventsAdminPage() {
     setEditingEventId(event.id);
     setEditHomeTeam(event.homeTeam);
     setEditAwayTeam(event.awayTeam);
+    setEditLeague(event.league || "");
     setEditKickoffTime(formatEventDateToInput(event.kickoffTime));
     setEditCreditCost(String(event.creditCost || 100));
   }
@@ -145,6 +319,7 @@ export default function EventsAdminPage() {
     setEditingEventId(null);
     setEditHomeTeam("");
     setEditAwayTeam("");
+    setEditLeague("");
     setEditKickoffTime("");
     setEditCreditCost("100");
   }
@@ -155,7 +330,7 @@ export default function EventsAdminPage() {
       return;
     }
 
-    if (!editHomeTeam.trim() || !editAwayTeam.trim() || !editKickoffTime) {
+    if (!editHomeTeam.trim() || !editAwayTeam.trim() || !editLeague.trim() || !editKickoffTime) {
       setMessage("✗ Kérlek töltsd ki a kötelező mezőket!");
       return;
     }
@@ -178,6 +353,7 @@ export default function EventsAdminPage() {
         body: JSON.stringify({
           homeTeam: editHomeTeam.trim(),
           awayTeam: editAwayTeam.trim(),
+          league: editLeague.trim(),
           kickoffTime: editKickoffTime,
           creditCost: Math.trunc(parsedCreditCost),
         }),
@@ -212,13 +388,14 @@ export default function EventsAdminPage() {
     }
 
     if (
+      !league.trim() ||
       kickoffYear.length !== 4 ||
       kickoffMonth.length !== 2 ||
       kickoffDay.length !== 2 ||
       kickoffHour.length !== 2 ||
       kickoffMinute.length !== 2
     ) {
-      setMessage("✗ Kérlek töltsd ki az időpontot teljesen (ÉÉÉÉ-HH-NN ÓÓ:PP)");
+      setMessage("✗ Kérlek töltsd ki a kötelező mezőket és az időpontot teljesen (ÉÉÉÉ-HH-NN ÓÓ:PP)");
       setLoading(false);
       return;
     }
@@ -268,13 +445,14 @@ export default function EventsAdminPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ homeTeam, awayTeam, kickoffTime, creditCost: parseInt(creditCost) || 100 }),
+        body: JSON.stringify({ homeTeam, awayTeam, league: league.trim(), kickoffTime, creditCost: parseInt(creditCost) || 100 }),
       });
 
       if (res.ok) {
         setMessage("✓ Esemény létrehozva!");
         setHomeTeam("");
         setAwayTeam("");
+        setLeague("");
         setKickoffYear("");
         setKickoffMonth("");
         setKickoffDay("");
@@ -565,6 +743,144 @@ export default function EventsAdminPage() {
         </header>
 
         <div className="space-y-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-extrabold text-gray-900 mb-4">
+              Esemény import API-ból
+            </h2>
+            <p className="text-sm text-gray-700 mb-4">
+              API-Football forrásból választhatsz közelgő focimeccseket, és egy kattintással létrehozhatod őket.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Eseménykör</label>
+                <select
+                  value={selectedScope}
+                  onChange={(e) => setSelectedScope(e.target.value as "elite" | "international" | "all")}
+                  className="w-full h-12 px-3 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                >
+                  <option value="elite">Top ligák + nemzetközi kupák</option>
+                  <option value="international">Nemzetközi sorozatok</option>
+                  <option value="all">Minden elérhető liga</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-gray-900 mb-1">Liga (ország szerint)</label>
+                <select
+                  value={selectedLeagueId}
+                  onChange={(e) => setSelectedLeagueId(e.target.value)}
+                  disabled={loadingLeagues || leagues.length === 0}
+                  className="w-full h-12 px-3 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                >
+                  {groupedLeagues.length === 0 && <option value="">Nincs elérhető liga</option>}
+                  {groupedLeagues.map(([country, items]) => (
+                    <optgroup key={country} label={country}>
+                      {items.map((item) => (
+                        <option key={item.id} value={item.id}>{item.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={loadSuggestions}
+                  disabled={loadingSuggestions}
+                  className={`w-full h-12 rounded-2xl text-white font-extrabold shadow transition ${
+                    loadingSuggestions ? "bg-blue-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800 active:bg-blue-900"
+                  }`}
+                >
+                  {loadingSuggestions ? "Lekérés..." : "Meccsek lekérése"}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Nap (magyar idő)</label>
+                <input
+                  type="date"
+                  value={filterDayBudapest}
+                  onChange={(e) => setFilterDayBudapest(e.target.value)}
+                  className="date-input-bright w-full h-12 px-3 rounded-xl border-2 border-gray-400 bg-white text-gray-900 font-extrabold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 1);
+                    setFilterDayBudapest(d.toLocaleDateString("sv-SE", { timeZone: "Europe/Budapest" }));
+                  }}
+                  className="w-full h-12 rounded-2xl text-white font-extrabold shadow transition bg-blue-700 hover:bg-blue-800 active:bg-blue-900"
+                >
+                  Holnap
+                </button>
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 2);
+                    setFilterDayBudapest(d.toLocaleDateString("sv-SE", { timeZone: "Europe/Budapest" }));
+                  }}
+                  className="w-full h-12 rounded-2xl text-white font-extrabold shadow transition bg-blue-700 hover:bg-blue-800 active:bg-blue-900"
+                >
+                  Holnapután
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {suggestions.length === 0 ? (
+                <p className="text-sm text-gray-600">Még nincs betöltött ajánlat.</p>
+              ) : (
+                suggestions.map((s) => {
+                  const rowId = s.externalId || `${s.homeTeam}-${s.awayTeam}-${s.kickoffUtc}`;
+                  const selectedLeagueName = leagues.find((l) => l.id === selectedLeagueId)?.name || "";
+                  const displayLeague = /^liga\s*#/i.test(s.league) && selectedLeagueName
+                    ? selectedLeagueName
+                    : s.league;
+                  return (
+                    <div key={rowId} className="border border-gray-200 rounded-xl px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-gray-900">{s.homeTeam} - {s.awayTeam}</p>
+                        <p className="text-sm text-gray-700">
+                          {displayLeague} - {new Date(s.kickoffUtc).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}
+                        </p>
+                        <div className="mt-2">
+                          <label className="block text-xs font-bold text-gray-700 mb-1">Kezdés (magyar idő, import előtt módosítható)</label>
+                          <input
+                            type="datetime-local"
+                            value={suggestionKickoffOverrides[rowId] || toBudapestInputDateTime(s.kickoffUtc)}
+                            onChange={(e) =>
+                              setSuggestionKickoffOverrides((prev) => ({
+                                ...prev,
+                                [rowId]: e.target.value,
+                              }))
+                            }
+                            className="h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => applySuggestionToForm({ ...s, league: displayLeague })}
+                        className="w-full md:w-auto px-4 py-2 rounded-xl text-white font-bold transition bg-green-700 hover:bg-green-800"
+                      >
+                        Űrlap kitöltése
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
           {/* Új esemény form */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl font-extrabold text-gray-900 mb-4">
@@ -596,6 +912,21 @@ export default function EventsAdminPage() {
                     value={awayTeam}
                     onChange={(e) => setAwayTeam(e.target.value)}
                     placeholder="pl. Ausztria"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
+                      placeholder:text-gray-400
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-1">
+                    Liga
+                  </label>
+                  <input
+                    value={league}
+                    onChange={(e) => setLeague(e.target.value)}
+                    placeholder="pl. Premier League, NB I"
                     className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
                       placeholder:text-gray-400
                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
@@ -739,6 +1070,9 @@ export default function EventsAdminPage() {
                         <p className="text-lg font-extrabold text-gray-900">
                           {e.homeTeam} – {e.awayTeam}
                         </p>
+                        <p className="text-sm text-indigo-700 font-semibold mt-1">
+                          Liga: {e.league || "Ismeretlen liga"}
+                        </p>
                         <p className="text-sm text-gray-700 mt-1">
                           Kezdés:{" "}
                           <span className="font-semibold text-gray-900">
@@ -784,6 +1118,14 @@ export default function EventsAdminPage() {
                           <input
                             value={editAwayTeam}
                             onChange={(ev) => setEditAwayTeam(ev.target.value)}
+                            className="w-full h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">Liga</label>
+                          <input
+                            value={editLeague}
+                            onChange={(ev) => setEditLeague(ev.target.value)}
                             className="w-full h-10 px-3 rounded-lg border-2 border-gray-300 text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
                           />
                         </div>
@@ -931,6 +1273,7 @@ export default function EventsAdminPage() {
                       <div key={`reopen-${e.id}`} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white border border-orange-200 rounded-lg px-3 py-2">
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{e.homeTeam} – {e.awayTeam}</p>
+                          <p className="text-xs text-indigo-700 font-semibold">Liga: {e.league || "Ismeretlen liga"}</p>
                           <p className="text-xs text-gray-700">
                             Kezdés: {new Date(e.kickoffTime).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}
                           </p>
@@ -968,6 +1311,9 @@ export default function EventsAdminPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                   <p className="text-sm text-blue-800">
                     <span className="font-bold">Esemény:</span> {events.find(e => e.id === resultEventId)?.homeTeam} – {events.find(e => e.id === resultEventId)?.awayTeam}
+                  </p>
+                  <p className="text-sm text-blue-800 mt-1">
+                    <span className="font-bold">Liga:</span> {events.find(e => e.id === resultEventId)?.league || "Ismeretlen liga"}
                   </p>
                 </div>
 

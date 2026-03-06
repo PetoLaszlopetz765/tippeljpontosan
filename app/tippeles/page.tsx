@@ -14,6 +14,7 @@ interface Event {
   id: number;
   homeTeam: string;
   awayTeam: string;
+  league: string;
   kickoffTime: string;
   status: "OPEN" | "CLOSED" | "NYITOTT" | "LEZÁRT";
   creditCost: number;
@@ -256,6 +257,8 @@ export default function TippelesPage() {
                     </div>
 
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-gray-700">Liga:</span>
+                      <span className="font-semibold text-indigo-700">{event.league || "Ismeretlen liga"}</span>
                       <span className="text-gray-700">Kezdés:</span>
                       <span className="font-semibold text-gray-900">
                         {new Date(event.kickoffTime).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}

@@ -168,3 +168,21 @@ body {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.date-input-bright {
+  color-scheme: light;
+}
+
+.date-input-bright::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  filter: invert(0) brightness(0.25) contrast(1.2);
+}
+
+:root.dark .date-input-bright {
+  color-scheme: dark;
+}
+
+:root.dark .date-input-bright::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2.2) contrast(1.1);
+}
