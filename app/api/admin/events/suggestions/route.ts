@@ -248,10 +248,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (gathered.length === 0 && lastExternalStatus && lastExternalStatus >= 400) {
-      return NextResponse.json(
-        { message: `Külső API hiba: ${lastExternalStatus}` },
-        { status: 502 }
-      );
+      return NextResponse.json({
+        suggestions: [],
+        selectedLeague: leagueName || null,
+        warning: `Külső API hiba (${lastExternalStatus}). Ellenőrizd a RAPIDAPI_KEY és RAPIDAPI_HOST értékét a Vercel környezeti változókban.`,
+      });
     }
 
     const upcomingSuggestions = gathered

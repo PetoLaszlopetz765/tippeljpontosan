@@ -10,6 +10,21 @@ type LeagueOption = {
 
 type Scope = "elite" | "international" | "all";
 
+const EMERGENCY_LEAGUES: LeagueOption[] = [
+  { id: "47", name: "Premier League", country: "ENG" },
+  { id: "54", name: "Bundesliga", country: "DEU" },
+  { id: "55", name: "Serie A", country: "ITA" },
+  { id: "87", name: "LaLiga", country: "ESP" },
+  { id: "42", name: "UEFA Champions League", country: "UEFA" },
+  { id: "73", name: "UEFA Europa League", country: "UEFA" },
+  { id: "302", name: "UEFA Conference League", country: "UEFA" },
+  { id: "108", name: "UEFA Nations League", country: "UEFA" },
+  { id: "1", name: "FIFA World Cup", country: "FIFA" },
+  { id: "4", name: "UEFA European Championship", country: "UEFA" },
+  { id: "53", name: "Ligue 1", country: "FRA" },
+  { id: "57", name: "Eredivisie", country: "NLD" },
+];
+
 function toStringValue(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (typeof value === "number") return String(value);
@@ -151,6 +166,13 @@ export async function GET(req: NextRequest) {
     }
 
     const requestedScope = req.nextUrl.searchParams.get("scope") || "elite";
+    const normalizedScope: Scope =
+      requestedScope === "international"
+        ? "international"
+        : requestedScope === "all"
+          ? "all"
+          : "elite";
+
     const rapidApiKey = process.env.RAPIDAPI_KEY || process.env.API_FOOTBALL_KEY;
     const rapidApiHost = process.env.RAPIDAPI_HOST || "free-api-live-football-data.p.rapidapi.com";
 
@@ -163,6 +185,7 @@ export async function GET(req: NextRequest) {
 
     let parsedLeagues: LeagueOption[] = [];
     let lastStatus: number | null = null;
+    let sourceWarning: string | null = null;
 
     if (isFreeLiveHost(rapidApiHost)) {
       const fetchEndpoint = async (endpoint: string) => {
@@ -240,25 +263,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (parsedLeagues.length === 0 && lastStatus && lastStatus >= 400) {
-      return NextResponse.json(
-        { message: `Külső API hiba: ${lastStatus}` },
-        { status: 502 }
-      );
+      parsedLeagues = [...EMERGENCY_LEAGUES];
+      sourceWarning = `Külső API hiba (${lastStatus}), ezért tartalék ligalistát használunk.`;
     }
 
     if (parsedLeagues.length === 0) {
-      return NextResponse.json(
-        { message: "Nem érkezett feldolgozható liga adat a külső API-ból." },
-        { status: 502 }
-      );
+      parsedLeagues = [...EMERGENCY_LEAGUES];
+      sourceWarning = "Nem érkezett feldolgozható liga adat a külső API-ból, ezért tartalék ligalistát használunk.";
     }
-
-    const normalizedScope: Scope =
-      requestedScope === "international"
-        ? "international"
-        : requestedScope === "all"
-          ? "all"
-          : "elite";
 
     const normalizeCompetitionName = (league: LeagueOption) => (league.name || "").toLowerCase();
 
@@ -342,9 +354,11 @@ export async function GET(req: NextRequest) {
       return country === "hun" || name.includes("nb i") || name.includes("otp bank");
     });
 
-    const warning = hasHungarianLeague
+    const noHungarianLeagueWarning = hasHungarianLeague
       ? null
       : "A jelenlegi API adatforrásban nem található magyar bajnokság (NB I).";
+
+    const warning = [sourceWarning, noHungarianLeagueWarning].filter(Boolean).join(" ") || null;
 
     return NextResponse.json({ leagues: filtered, sport: "Soccer", scope: normalizedScope, warning });
   } catch (err) {
