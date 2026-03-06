@@ -1,0 +1,34 @@
+name: Drive Backup Trigger
+
+on:
+  schedule:
+    - cron: "59 21 * * *"
+    - cron: "59 22 * * *"
+  workflow_dispatch:
+
+jobs:
+  trigger-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backup endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BACKUP_URL: https://tippeljpontosan.vercel.app/api/admin/backup/upload-drive
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET GitHub secret nincs beállítva."
+            exit 1
+          fi
+
+          echo "Calling: $BACKUP_URL"
+          HTTP_CODE=$(curl -sS -o response.json -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$BACKUP_URL")
+
+          echo "HTTP status: $HTTP_CODE"
+          cat response.json
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "Backup trigger failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
