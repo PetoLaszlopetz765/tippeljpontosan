@@ -10,6 +10,15 @@ type SuggestionRow = {
   league: string;
 };
 
+type SuggestionsCacheEntry = {
+  suggestions: SuggestionRow[];
+  firstAvailableDay: string;
+  updatedAt: number;
+};
+
+const SUGGESTIONS_CACHE_TTL_MS = 15 * 60 * 1000;
+const suggestionsCache = new Map<string, SuggestionsCacheEntry>();
+
 function budapestDateKeyFromIso(isoUtc: string) {
   const date = new Date(isoUtc);
   if (Number.isNaN(date.getTime())) return "";
@@ -212,6 +221,11 @@ export async function GET(req: NextRequest) {
       .filter(Boolean)
       .map((entry) => (entry.startsWith("/") ? entry : `/${entry}`));
 
+    const cacheKey = `${leagueId}`;
+    const cachedEntry = suggestionsCache.get(cacheKey);
+    const hasFreshCache =
+      Boolean(cachedEntry) && Date.now() - (cachedEntry?.updatedAt || 0) < SUGGESTIONS_CACHE_TTL_MS;
+
     let gathered: SuggestionRow[] = [];
     let lastExternalStatus: number | null = null;
 
@@ -248,10 +262,21 @@ export async function GET(req: NextRequest) {
     }
 
     if (gathered.length === 0 && lastExternalStatus && lastExternalStatus >= 400) {
+      if (hasFreshCache && cachedEntry && cachedEntry.suggestions.length > 0) {
+        return NextResponse.json({
+          suggestions: cachedEntry.suggestions,
+          selectedLeague: leagueName || null,
+          warning: `Külső API hiba (${lastExternalStatus}), ezért az utolsó sikeres lekérés adatait mutatjuk (${cachedEntry.firstAvailableDay}).`,
+        });
+      }
+
       return NextResponse.json({
         suggestions: [],
         selectedLeague: leagueName || null,
-        warning: `Külső API hiba (${lastExternalStatus}). Ellenőrizd a RAPIDAPI_KEY és RAPIDAPI_HOST értékét a Vercel környezeti változókban.`,
+        warning:
+          lastExternalStatus === 429
+            ? "Az API ideiglenesen túlterhelt (429 Too Many Requests). Próbáld újra 1-2 perc múlva."
+            : `Külső API hiba (${lastExternalStatus}). Ellenőrizd a RAPIDAPI_KEY és RAPIDAPI_HOST értékét a Vercel környezeti változókban.`,
       });
     }
 
@@ -298,6 +323,14 @@ export async function GET(req: NextRequest) {
         : selectedDaySuggestions.length > 0
           ? null
           : `A kiválasztott napon (${requestedDayBudapest}) nincs meccs, ezért a következő elérhető meccsnapot mutatjuk: ${firstAvailableDay}.`;
+
+    if (suggestions.length > 0) {
+      suggestionsCache.set(cacheKey, {
+        suggestions,
+        firstAvailableDay,
+        updatedAt: Date.now(),
+      });
+    }
 
     return NextResponse.json({
       suggestions,
