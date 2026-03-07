@@ -68,6 +68,33 @@ function resolveTheSportDbKey(): string {
   return normalized;
 }
 
+function normalizeFootballDataCompetitionCode(rawLeagueId: string): string {
+  const value = (rawLeagueId || "").trim();
+  if (!value) return "";
+
+  // Ha mar eleve football-data kod (pl. PL, BL1, CL), visszaadjuk valtozatlanul.
+  if (/^[A-Za-z][A-Za-z0-9]{1,5}$/.test(value)) {
+    return value.toUpperCase();
+  }
+
+  const mapped: Record<string, string> = {
+    "47": "PL",
+    "54": "BL1",
+    "55": "SA",
+    "87": "PD",
+    "53": "FL1",
+    "57": "DED",
+    "42": "CL",
+    "73": "EL",
+    "302": "ECL",
+    "108": "UNL",
+    "1": "WC",
+    "4": "EC",
+  };
+
+  return mapped[value] || value;
+}
+
 function parseTheSportDbKickoff(event: Record<string, unknown>): string {
   const fromTimestamp = toStringValue(event.strTimestamp);
   if (fromTimestamp) {
@@ -385,10 +412,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (!isNb1League && footballDataKey) {
+      const footballDataCompetitionCode = normalizeFootballDataCompetitionCode(leagueId);
       try {
         const selectedDayRows = await fetchFootballDataMatchesByRange(
           footballDataKey,
-          leagueId,
+          footballDataCompetitionCode,
           requestedDayBudapest,
           requestedDayBudapest
         );
@@ -399,7 +427,7 @@ export async function GET(req: NextRequest) {
           const endDay = addDaysIso(requestedDayBudapest, 14);
           gathered = await fetchFootballDataMatchesByRange(
             footballDataKey,
-            leagueId,
+            footballDataCompetitionCode,
             requestedDayBudapest,
             endDay
           );
