@@ -17,6 +17,7 @@ type SuggestionsCacheEntry = {
 };
 
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
+const THE_SPORT_DB_BASE_URL = "https://www.thesportsdb.com/api/v1/json";
 const SUGGESTIONS_CACHE_TTL_MS = 15 * 60 * 1000;
 const suggestionsCache = new Map<string, SuggestionsCacheEntry>();
 
@@ -51,6 +52,68 @@ function toStringValue(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (typeof value === "number") return String(value);
   return "";
+}
+
+function resolveTheSportDbKey(): string {
+  const raw =
+    process.env.THESPORTDB_API_KEY ||
+    process.env.THE_SPORT_DB_API_KEY ||
+    "";
+
+  const normalized = raw.trim();
+  if (!normalized) return "";
+
+  const match = normalized.match(/\/api\/v1\/json\/([^/]+)/i);
+  if (match?.[1]) return match[1].trim();
+  return normalized;
+}
+
+function parseTheSportDbKickoff(event: Record<string, unknown>): string {
+  const fromTimestamp = toStringValue(event.strTimestamp);
+  if (fromTimestamp) {
+    const d = new Date(fromTimestamp);
+    if (!Number.isNaN(d.getTime())) return d.toISOString();
+  }
+
+  const datePart = toStringValue(event.dateEvent) || toStringValue(event.dateEventLocal);
+  if (!datePart) return "";
+
+  const rawTime = toStringValue(event.strTime) || toStringValue(event.strTimeLocal) || "00:00:00";
+  const timePart = /^\d{2}:\d{2}(:\d{2})?$/.test(rawTime) ? rawTime : "00:00:00";
+  const d = new Date(`${datePart}T${timePart}Z`);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
+async function fetchTheSportDbNb1Events(apiKey: string): Promise<SuggestionRow[]> {
+  const url = `${THE_SPORT_DB_BASE_URL}/${apiKey}/eventsnextleague.php?id=4690`;
+  const res = await fetch(url, { cache: "no-store" });
+
+  if (!res.ok) {
+    throw new Error(`TheSportDB eventsnextleague hiba: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const events = Array.isArray(data?.events) ? data.events : [];
+
+  return events
+    .map((row: Record<string, unknown>) => {
+      const homeTeam = toStringValue(row.strHomeTeam);
+      const awayTeam = toStringValue(row.strAwayTeam);
+      const kickoffUtc = parseTheSportDbKickoff(row);
+      const league = toStringValue(row.strLeague) || "Hungarian NB I";
+      const externalId = toStringValue(row.idEvent) || `${homeTeam}-${awayTeam}-${kickoffUtc}`;
+
+      if (!homeTeam || !awayTeam || !kickoffUtc) return null;
+
+      return {
+        externalId,
+        homeTeam,
+        awayTeam,
+        kickoffUtc,
+        league,
+      } as SuggestionRow;
+    })
+    .filter((item: SuggestionRow | null): item is SuggestionRow => Boolean(item));
 }
 
 function extractName(value: unknown): string {
@@ -264,8 +327,9 @@ export async function GET(req: NextRequest) {
     const footballDataKey = process.env.FOOTBALL_DATA_API_KEY;
     const rapidApiKey = process.env.RAPIDAPI_KEY || process.env.API_FOOTBALL_KEY;
     const rapidApiHost = process.env.RAPIDAPI_HOST || "free-api-live-football-data.p.rapidapi.com";
+    const isNb1League = String(leagueId) === "4690";
 
-    if (!footballDataKey && !rapidApiKey) {
+    if (!footballDataKey && !rapidApiKey && !isNb1League) {
       return NextResponse.json(
         { message: "Hiányzik a FOOTBALL_DATA_API_KEY vagy RAPIDAPI_KEY (API_FOOTBALL_KEY) környezeti változó." },
         { status: 500 }
@@ -291,7 +355,36 @@ export async function GET(req: NextRequest) {
     let gathered: SuggestionRow[] = [];
     let lastExternalStatus: number | null = null;
 
-    if (footballDataKey) {
+    if (isNb1League) {
+      const theSportDbKey = resolveTheSportDbKey();
+      if (!theSportDbKey) {
+        return NextResponse.json({
+          suggestions: [],
+          selectedLeague: leagueName || null,
+          warning: "NB I lekéréshez hiányzik a THESPORTDB_API_KEY környezeti változó.",
+        });
+      }
+
+      try {
+        gathered = await fetchTheSportDbNb1Events(theSportDbKey);
+      } catch {
+        if (hasFreshCache && cachedEntry && cachedEntry.suggestions.length > 0) {
+          return NextResponse.json({
+            suggestions: cachedEntry.suggestions,
+            selectedLeague: leagueName || null,
+            warning: `A TheSportDB forrás átmenetileg nem elérhető, ezért az utolsó sikeres NB I lekérés adatait mutatjuk (${cachedEntry.firstAvailableDay}).`,
+          });
+        }
+
+        return NextResponse.json({
+          suggestions: [],
+          selectedLeague: leagueName || null,
+          warning: "A TheSportDB forrás átmenetileg nem elérhető az NB I lekéréshez.",
+        });
+      }
+    }
+
+    if (!isNb1League && footballDataKey) {
       try {
         const selectedDayRows = await fetchFootballDataMatchesByRange(
           footballDataKey,

@@ -11,6 +11,7 @@ type LeagueOption = {
 type Scope = "elite" | "international" | "all";
 
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
+const THE_SPORT_DB_BASE_URL = "https://www.thesportsdb.com/api/v1/json";
 
 const EMERGENCY_LEAGUES: LeagueOption[] = [
   { id: "47", name: "Premier League", country: "ENG" },
@@ -25,12 +26,44 @@ const EMERGENCY_LEAGUES: LeagueOption[] = [
   { id: "4", name: "UEFA European Championship", country: "UEFA" },
   { id: "53", name: "Ligue 1", country: "FRA" },
   { id: "57", name: "Eredivisie", country: "NLD" },
+  { id: "4690", name: "Hungarian NB I", country: "Hungary" },
 ];
 
 function toStringValue(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (typeof value === "number") return String(value);
   return "";
+}
+
+function resolveTheSportDbKey(): string {
+  const raw =
+    process.env.THESPORTDB_API_KEY ||
+    process.env.THE_SPORT_DB_API_KEY ||
+    "";
+
+  const normalized = raw.trim();
+  if (!normalized) return "";
+
+  const match = normalized.match(/\/api\/v1\/json\/([^/]+)/i);
+  if (match?.[1]) return match[1].trim();
+  return normalized;
+}
+
+async function fetchSportDbNb1League(apiKey: string): Promise<LeagueOption | null> {
+  const res = await fetch(`${THE_SPORT_DB_BASE_URL}/${apiKey}/lookupleague.php?id=4690`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  const leagues = Array.isArray(data?.leagues) ? data.leagues : [];
+  const row = leagues[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+
+  const id = toStringValue(row.idLeague) || "4690";
+  const name = toStringValue(row.strLeague) || "Hungarian NB I";
+  const country = toStringValue(row.strCountry) || "Hungary";
+  return { id, name, country };
 }
 
 function pickString(obj: Record<string, unknown>, keys: string[]): string {
@@ -312,6 +345,24 @@ export async function GET(req: NextRequest) {
     if (parsedLeagues.length === 0) {
       parsedLeagues = [...EMERGENCY_LEAGUES];
       sourceWarning = "Nem érkezett feldolgozható liga adat a külső API-ból, ezért tartalék ligalistát használunk.";
+    }
+
+    // NB I mindig jelenjen meg: elsőként TheSportDB-ből, különben fix tartalékból.
+    const theSportDbKey = resolveTheSportDbKey();
+    let nb1League: LeagueOption = { id: "4690", name: "Hungarian NB I", country: "Hungary" };
+    if (theSportDbKey) {
+      try {
+        const fetchedNb1 = await fetchSportDbNb1League(theSportDbKey);
+        if (fetchedNb1) nb1League = fetchedNb1;
+      } catch {
+        // Halk fallback a fix NB I rekordra
+      }
+    }
+
+    const hasNb1ById = parsedLeagues.some((league) => String(league.id) === "4690");
+    const hasNb1ByName = parsedLeagues.some((league) => (league.name || "").toLowerCase().includes("nb i"));
+    if (!hasNb1ById && !hasNb1ByName) {
+      parsedLeagues.push(nb1League);
     }
 
     const normalizeCompetitionName = (league: LeagueOption) => (league.name || "").toLowerCase();
