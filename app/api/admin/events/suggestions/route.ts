@@ -69,6 +69,27 @@ function resolveTheSportDbKey(): string {
   return normalized;
 }
 
+function mapToSportDbLeagueId(rawLeagueId: string): string {
+  const value = String(rawLeagueId || "").trim();
+  const map: Record<string, string> = {
+    "47": "4328",   // Premier League
+    "54": "4331",   // Bundesliga
+    "55": "4332",   // Serie A
+    "87": "4335",   // La Liga
+    "53": "4334",   // Ligue 1
+    "57": "4337",   // Eredivisie
+    "42": "4480",   // UCL
+    "73": "4481",   // UEL
+    "302": "4482",  // UECL
+    "108": "4485",  // Nations League
+    "1": "4424",    // World Cup
+    "4": "4324",    // Euro
+    "4690": "4690", // NB I
+  };
+
+  return map[value] || value;
+}
+
 function normalizeFootballDataCompetitionCode(rawLeagueId: string): string {
   const value = (rawLeagueId || "").trim();
   if (!value) return "";
@@ -112,8 +133,8 @@ function parseTheSportDbKickoff(event: Record<string, unknown>): string {
   return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
-async function fetchTheSportDbNb1Events(apiKey: string): Promise<SuggestionRow[]> {
-  const url = `${THE_SPORT_DB_BASE_URL}/${apiKey}/eventsnextleague.php?id=4690`;
+async function fetchTheSportDbLeagueEvents(apiKey: string, leagueId: string): Promise<SuggestionRow[]> {
+  const url = `${THE_SPORT_DB_BASE_URL}/${apiKey}/eventsnextleague.php?id=${encodeURIComponent(leagueId)}`;
   const res = await fetch(url, { cache: "no-store" });
 
   if (!res.ok) {
@@ -128,7 +149,7 @@ async function fetchTheSportDbNb1Events(apiKey: string): Promise<SuggestionRow[]
       const homeTeam = toStringValue(row.strHomeTeam);
       const awayTeam = toStringValue(row.strAwayTeam);
       const kickoffUtc = parseTheSportDbKickoff(row);
-      const league = toStringValue(row.strLeague) || "Hungarian NB I";
+      const league = toStringValue(row.strLeague) || "Ismeretlen liga";
       const externalId = toStringValue(row.idEvent) || `${homeTeam}-${awayTeam}-${kickoffUtc}`;
 
       if (!homeTeam || !awayTeam || !kickoffUtc) return null;
@@ -356,6 +377,7 @@ export async function GET(req: NextRequest) {
     const rapidApiKey = process.env.RAPIDAPI_KEY || process.env.API_FOOTBALL_KEY;
     const rapidApiHost = process.env.RAPIDAPI_HOST || "free-api-live-football-data.p.rapidapi.com";
     const isNb1League = String(leagueId) === "4690";
+    const theSportDbKey = resolveTheSportDbKey();
 
     if (!footballDataKey && !rapidApiKey && !isNb1League) {
       return NextResponse.json(
@@ -384,7 +406,6 @@ export async function GET(req: NextRequest) {
     let lastExternalStatus: number | null = null;
 
     if (isNb1League) {
-      const theSportDbKey = resolveTheSportDbKey();
       if (!theSportDbKey) {
         return NextResponse.json({
           suggestions: [],
@@ -394,7 +415,7 @@ export async function GET(req: NextRequest) {
       }
 
       try {
-        gathered = await fetchTheSportDbNb1Events(theSportDbKey);
+        gathered = await fetchTheSportDbLeagueEvents(theSportDbKey, "4690");
       } catch {
         if (hasFreshCache && cachedEntry && cachedEntry.suggestions.length > 0) {
           return NextResponse.json({
@@ -409,6 +430,16 @@ export async function GET(req: NextRequest) {
           selectedLeague: leagueName || null,
           warning: "A TheSportDB forrás átmenetileg nem elérhető az NB I lekéréshez.",
         });
+      }
+    }
+
+    // Ha a fo forrasok nem adnak adatot, probaljunk TheSportDB fallbacket a kivalasztott ligara.
+    if (gathered.length === 0 && theSportDbKey) {
+      try {
+        const sportDbLeagueId = mapToSportDbLeagueId(leagueId);
+        gathered = await fetchTheSportDbLeagueEvents(theSportDbKey, sportDbLeagueId);
+      } catch {
+        // Halk fallback: marad az ures lista/cached logika
       }
     }
 
@@ -515,18 +546,27 @@ export async function GET(req: NextRequest) {
       })
       .sort((a, b) => new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime());
 
-    const selectedDaySuggestions = upcomingSuggestions.filter(
+    const allSortedSuggestions = [...gathered]
+      .filter((item) => {
+        const kickoff = new Date(item.kickoffUtc).getTime();
+        return !Number.isNaN(kickoff);
+      })
+      .sort((a, b) => new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime());
+
+    const effectiveSuggestions = upcomingSuggestions.length > 0 ? upcomingSuggestions : allSortedSuggestions;
+
+    const selectedDaySuggestions = effectiveSuggestions.filter(
       (item) => budapestDateKeyFromIso(item.kickoffUtc) === requestedDayBudapest
     );
 
     const firstAvailableDay = selectedDaySuggestions.length
       ? requestedDayBudapest
-      : upcomingSuggestions[0]
-      ? budapestDateKeyFromIso(upcomingSuggestions[0].kickoffUtc)
+      : effectiveSuggestions[0]
+      ? budapestDateKeyFromIso(effectiveSuggestions[0].kickoffUtc)
       : "";
 
     const suggestions = firstAvailableDay
-      ? upcomingSuggestions.filter((item) => budapestDateKeyFromIso(item.kickoffUtc) === firstAvailableDay)
+      ? effectiveSuggestions.filter((item) => budapestDateKeyFromIso(item.kickoffUtc) === firstAvailableDay)
       : [];
 
     const warning =
@@ -534,6 +574,8 @@ export async function GET(req: NextRequest) {
         ? "Nincs elérhető közelgő meccs ebben a ligában."
         : selectedDaySuggestions.length > 0
           ? null
+          : upcomingSuggestions.length === 0
+            ? `A kiválasztott naptól (${requestedDayBudapest}) nincs meccs, ezért a legközelebbi elérhető meccsnapot mutatjuk: ${firstAvailableDay}.`
           : `A kiválasztott napon (${requestedDayBudapest}) nincs meccs, ezért a következő elérhető meccsnapot mutatjuk: ${firstAvailableDay}.`;
 
     if (suggestions.length > 0) {
