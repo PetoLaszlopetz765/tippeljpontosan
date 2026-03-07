@@ -58,10 +58,11 @@ function resolveTheSportDbKey(): string {
   const raw =
     process.env.THESPORTDB_API_KEY ||
     process.env.THE_SPORT_DB_API_KEY ||
+    process.env.FOOTBALL_DATA_API_KEY ||
     "";
 
   const normalized = raw.trim();
-  if (!normalized) return "";
+  if (!normalized) return "123";
 
   const match = normalized.match(/\/api\/v1\/json\/([^/]+)/i);
   if (match?.[1]) return match[1].trim();
