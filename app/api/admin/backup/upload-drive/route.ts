@@ -36,36 +36,16 @@ function buildDriveAuth() {
   });
 }
 
-function getBudapestHourMinute(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Budapest",
-    hour12: false,
-    hour: "2-digit",
-    minute: "2-digit",
-  }).formatToParts(date);
-
-  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
-  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
-  return { hour, minute };
-}
-
-function isWithinDailyBackupWindowBudapest(date: Date) {
-  const { hour, minute } = getBudapestHourMinute(date);
-
-  const isLateBeforeMidnight = hour === 23 && minute >= 45;
-  const isJustAfterMidnightDelay = hour === 0 && minute <= 20;
-
-  return {
-    allowed: isLateBeforeMidnight || isJustAfterMidnightDelay,
-    hour,
-    minute,
-  };
-}
-
 function getBudapestDateKey(date: Date, treatPostMidnightAsPreviousDay = false) {
   let baseDate = date;
   if (treatPostMidnightAsPreviousDay) {
-    const { hour } = getBudapestHourMinute(date);
+    const hour = Number(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Budapest",
+        hour12: false,
+        hour: "2-digit",
+      }).format(date)
+    );
     if (hour === 0) {
       baseDate = new Date(date.getTime() - 24 * 60 * 60 * 1000);
     }
@@ -215,15 +195,6 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
-    const windowCheck = isWithinDailyBackupWindowBudapest(now);
-
-    if (!windowCheck.allowed) {
-      return NextResponse.json({
-        message: "Cron futás kihagyva: időablakon kívül (elvárt: 23:45-23:59 vagy 00:00-00:20 Europe/Budapest).",
-        budapestTime: `${String(windowCheck.hour).padStart(2, "0")}:${String(windowCheck.minute).padStart(2, "0")}`,
-        utcNow: now.toISOString(),
-      });
-    }
 
     const backupDayKey = getBudapestDateKey(now, true);
     const dedupKey = "auto_drive_backup_last_date";

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { Prisma } from "@prisma/client";
+import { autoCloseStartedEvents } from "@/lib/eventStatus";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
@@ -36,6 +37,8 @@ function calculatePoints(predicted: {home: number, away: number}, actual: {home:
 
 export async function POST(req: NextRequest) {
   try {
+    await autoCloseStartedEvents();
+
     // Token-ből kinyerni a userId-t
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
