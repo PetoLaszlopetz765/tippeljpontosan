@@ -1,7 +1,8 @@
 "use client";
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { exportElementToPdf } from "@/lib/exportPdf";
 
 
 import Link from "next/link";
@@ -53,8 +54,12 @@ export default function RanglistaPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [closeMsg, setCloseMsg] = useState("");
   const [closeLoading, setCloseLoading] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportGeneratedAt, setExportGeneratedAt] = useState("");
   const [pool, setPool] = useState<{ totalDaily: number, totalChampionship: number }>({ totalDaily: 0, totalChampionship: 0 });
   const [events, setEvents] = useState<any[]>([]);
+  const exportRef = useRef<HTMLDivElement | null>(null);
   // ÚJ: Frissítés trigger figyelése (tippelés után) - events és bets
   useEffect(() => {
     const handler = () => {
@@ -188,6 +193,93 @@ export default function RanglistaPage() {
     ? new Date(nextEvent.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })
     : "";
 
+  const formatExportTimestamp = (date: Date) => {
+    return date.toLocaleString("hu-HU", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: "Europe/Budapest",
+    });
+  };
+
+  const sortedLeaderboard = useMemo(() => {
+    return leaderboard
+      .filter((user) => user.role !== "ADMIN")
+      .slice()
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.credits !== a.credits) return b.credits - a.credits;
+        if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+        return a.username.localeCompare(b.username);
+      });
+  }, [leaderboard]);
+
+  const handleExportPdf = async () => {
+    if (!exportRef.current || exportingPdf || loading || tab !== "ranking") return;
+
+    setExportingPdf(true);
+    setError("");
+    try {
+      const now = new Date();
+      const timestamp = formatExportTimestamp(now);
+      setExportGeneratedAt(timestamp);
+      // Várunk egy ticket, hogy az export blokk biztosan frissüljön a DOM-ban.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await exportElementToPdf(exportRef.current, `ranglista-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err: any) {
+      setError(err?.message || "Nem sikerült a PDF export.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (exportingExcel || loading || tab !== "ranking") return;
+
+    setExportingExcel(true);
+    setError("");
+    try {
+      const now = new Date();
+      const timestamp = formatExportTimestamp(now);
+      setExportGeneratedAt(timestamp);
+      const XLSX = await import("xlsx");
+      const rows = sortedLeaderboard.map((user, index) => ({
+        Helyezes: index + 1,
+        Jatekos: user.username,
+        Pont: user.points,
+        Kredit: user.credits,
+        TippekSzama: user.tipsCount,
+        Telitalalat: user.perfectCount,
+      }));
+
+      const workbook = XLSX.utils.book_new();
+      const metaRows = [
+        ["Export típusa", "Ranglista"],
+        ["Generálás ideje", timestamp],
+        ["Következő esemény napi poolja", `${nextEventPool} kredit`],
+        ["Bajnoki pool", `${pool.totalChampionship} kredit`],
+        [],
+      ];
+      const worksheet = XLSX.utils.aoa_to_sheet(metaRows);
+      if (rows.length > 0) {
+        XLSX.utils.sheet_add_json(worksheet, rows, { origin: "A6" });
+      } else {
+        XLSX.utils.sheet_add_aoa(worksheet, [["Nincs exportálható adat"]], { origin: "A6" });
+      }
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Ranglista");
+
+      const fileName = `ranglista-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+    } catch (err: any) {
+      setError(err?.message || "Nem sikerült az Excel export.");
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-slate-900 px-4 py-10">
@@ -252,6 +344,25 @@ export default function RanglistaPage() {
               {closeMsg && <div className="text-center text-lg font-semibold text-green-700 dark:text-green-300 mt-2">{closeMsg}</div>}
             </div>
           )}
+
+          <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={loading || tab !== "ranking" || exportingExcel || sortedLeaderboard.length === 0}
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white font-bold px-4 py-2 shadow"
+            >
+              {exportingExcel ? "Excel készül..." : "Excel export"}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={loading || tab !== "ranking" || exportingPdf || sortedLeaderboard.length === 0}
+              className="inline-flex items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold px-4 py-2 shadow"
+            >
+              {exportingPdf ? "PDF készül..." : "PDF export"}
+            </button>
+          </div>
         </div>
 
         <div className="mb-8" />
@@ -260,7 +371,19 @@ export default function RanglistaPage() {
           <div className="text-center py-12 text-gray-500 dark:text-slate-400">Betöltés...</div>
         ) : tab === "ranking" ? (
           // RANGLISTA TAB
-          <div>
+          <div ref={exportRef}>
+            <div className="mb-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 p-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Ranglista export információk</h2>
+              <p className="text-sm text-gray-700 dark:text-slate-300 mt-1">
+                Generálás ideje: <span className="font-semibold">{exportGeneratedAt || "-"}</span>
+              </p>
+              <p className="text-sm text-gray-700 dark:text-slate-300">
+                Következő esemény napi poolja: <span className="font-semibold">{nextEventPool} kredit</span>
+              </p>
+              <p className="text-sm text-gray-700 dark:text-slate-300">
+                Bajnoki pool: <span className="font-semibold">{pool.totalChampionship} kredit</span>
+              </p>
+            </div>
             {/* Asztali nézet: táblázat */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hidden md:block">
               <div className="overflow-x-auto">
@@ -276,15 +399,7 @@ export default function RanglistaPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {leaderboard
-                      .filter(user => user.role !== "ADMIN")
-                      .slice() // copy to avoid mutating state
-                      .sort((a, b) => {
-                        if (b.points !== a.points) return b.points - a.points;
-                        if (b.credits !== a.credits) return b.credits - a.credits;
-                        if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
-                        return a.username.localeCompare(b.username);
-                      })
+                    {sortedLeaderboard
                       .map((user, index) => (
                         <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
                           <td className="px-4 py-4">
@@ -331,15 +446,7 @@ export default function RanglistaPage() {
 
             {/* Mobil nézet: kártyák */}
             <div className="grid gap-3 md:hidden">
-              {leaderboard
-                .filter(user => user.role !== "ADMIN")
-                .slice()
-                .sort((a, b) => {
-                  if (b.points !== a.points) return b.points - a.points;
-                  if (b.credits !== a.credits) return b.credits - a.credits;
-                  if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
-                  return a.username.localeCompare(b.username);
-                })
+              {sortedLeaderboard
                 .map((user, index) => (
                   <div key={user.id} className="border border-purple-200 dark:border-purple-800 rounded-xl p-4 bg-white dark:bg-slate-800 shadow-sm">
                     <div className="flex items-center justify-between mb-3">

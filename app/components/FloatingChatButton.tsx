@@ -12,6 +12,7 @@ const DRAG_THRESHOLD = 6;
 export default function FloatingChatButton() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [position, setPosition] = useState<Position>({ x: 20, y: 100 });
   const draggingRef = useRef(false);
   const movedRef = useRef(false);
@@ -39,6 +40,49 @@ export default function FloatingChatButton() {
       });
     }
   }, []);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      setUnreadCount(0);
+      return;
+    }
+
+    if (pathname === "/chat") {
+      setUnreadCount(0);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadUnreadCount = async () => {
+      try {
+        const res = await fetch("/api/chat/unread-count", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          if (isMounted) setUnreadCount(0);
+          return;
+        }
+
+        const data = await res.json();
+        const nextCount = typeof data?.unreadCount === "number" ? data.unreadCount : 0;
+        if (isMounted) setUnreadCount(nextCount);
+      } catch {
+        if (isMounted) setUnreadCount(0);
+      }
+    };
+
+    loadUnreadCount();
+    const interval = window.setInterval(loadUnreadCount, 10000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     function onMove(e: PointerEvent) {
@@ -101,7 +145,7 @@ export default function FloatingChatButton() {
     >
       <Link
         href="/chat"
-        className="h-14 w-14 rounded-full bg-blue-700 hover:bg-blue-800 text-white shadow-lg flex items-center justify-center text-2xl"
+        className="relative h-14 w-14 rounded-full bg-blue-700 hover:bg-blue-800 text-white shadow-lg flex items-center justify-center text-2xl"
         onClick={(e) => {
           if (movedRef.current) {
             e.preventDefault();
@@ -109,6 +153,11 @@ export default function FloatingChatButton() {
         }}
       >
         💬
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-600 text-white text-[11px] leading-5 font-bold text-center">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
       </Link>
     </div>
   );

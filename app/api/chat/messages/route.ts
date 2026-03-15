@@ -50,6 +50,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Érvénytelen token" }, { status: 401 });
     }
 
+    // Ha a user megnyitja/lekéri a chatet, tekintsük olvasottnak a jelenlegi állapotot.
+    await prisma.user.update({
+      where: { id: payload.userId },
+      data: { chatLastReadAt: new Date() },
+    });
+
     const messages = await prisma.chatMessage.findMany({
       where: { deleted: false },
       orderBy: { createdAt: "asc" },
