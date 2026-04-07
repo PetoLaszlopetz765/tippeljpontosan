@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 interface InviteCode {
   code: string;
   used: boolean;
+  sentToEmail?: string | null;
+  sentAt?: string | null;
 }
 
 export default function AdminInviteCodesPage() {
@@ -17,12 +19,7 @@ export default function AdminInviteCodesPage() {
   const [sendingCode, setSendingCode] = useState("");
   const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
 
-  useEffect(() => {
-    // Redirect to login if session token is missing
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
+  const loadCodes = () => {
     fetch("/api/admin/invite-codes", {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -30,6 +27,15 @@ export default function AdminInviteCodesPage() {
       .then(data => setCodes(data.codes || []))
       .catch(() => setError("Nem sikerült lekérni a kódokat"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    // Redirect to login if session token is missing
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+    loadCodes();
   }, [newCode]);
 
   const handleGenerate = async () => {
@@ -90,6 +96,7 @@ export default function AdminInviteCodesPage() {
       }
 
       setSuccess(data?.message || `Meghívó elküldve: ${email}`);
+      loadCodes();
     } catch {
       setError("Hálózati hiba történt az email küldésekor.");
     } finally {
@@ -128,12 +135,22 @@ export default function AdminInviteCodesPage() {
             codes.filter(codeObj => codeObj.used === false).map(codeObj => (
               <div key={codeObj.code} className="px-4 py-2 bg-gray-100 border rounded">
                 <div className="flex items-center justify-between gap-3">
-                  <button
-                    className="text-purple-900 font-mono text-lg hover:bg-purple-50 text-left rounded px-2 py-1"
-                    onClick={() => handleCopy(codeObj.code)}
-                  >
-                    {codeObj.code}
-                  </button>
+                  <div>
+                    <button
+                      className="text-purple-900 font-mono text-lg hover:bg-purple-50 text-left rounded px-2 py-1"
+                      onClick={() => handleCopy(codeObj.code)}
+                    >
+                      {codeObj.code}
+                    </button>
+                    {codeObj.sentToEmail ? (
+                      <p className="text-xs text-gray-600 mt-1 px-2">
+                        Kiküldve: <span className="font-semibold">{codeObj.sentToEmail}</span>
+                        {codeObj.sentAt ? ` (${new Date(codeObj.sentAt).toLocaleString("hu-HU")})` : ""}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-amber-700 mt-1 px-2">Még nem volt kiküldve emailben.</p>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleSendInvite(codeObj.code)}

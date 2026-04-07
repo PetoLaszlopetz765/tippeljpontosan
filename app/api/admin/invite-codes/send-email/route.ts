@@ -4,9 +4,28 @@ import jwt from "jsonwebtoken";
 import { sendInviteCodeEmail } from "@/lib/gmail";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
+const INVITE_EMAIL_LOG_KEY = "invite_code_email_log";
+
+type InviteEmailLog = Record<string, { email: string; sentAt: string }>;
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function parseInviteEmailLog(raw: string | null): InviteEmailLog {
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    return parsed as InviteEmailLog;
+  } catch {
+    return {};
+  }
 }
 
 function getAppUrl() {
@@ -67,6 +86,22 @@ export async function POST(req: NextRequest) {
       to: email,
       inviteCode: invite.code,
       appUrl: getAppUrl(),
+    });
+
+    const existingLogSetting = await prisma.setting.findUnique({
+      where: { key: INVITE_EMAIL_LOG_KEY },
+    });
+
+    const log = parseInviteEmailLog(existingLogSetting?.value ?? null);
+    log[invite.code] = {
+      email,
+      sentAt: new Date().toISOString(),
+    };
+
+    await prisma.setting.upsert({
+      where: { key: INVITE_EMAIL_LOG_KEY },
+      update: { value: JSON.stringify(log) },
+      create: { key: INVITE_EMAIL_LOG_KEY, value: JSON.stringify(log) },
     });
 
     return NextResponse.json({

@@ -3,6 +3,25 @@ import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
+const INVITE_EMAIL_LOG_KEY = "invite_code_email_log";
+
+type InviteEmailLog = Record<string, { email: string; sentAt: string }>;
+
+function parseInviteEmailLog(raw: string | null): InviteEmailLog {
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    return parsed as InviteEmailLog;
+  } catch {
+    return {};
+  }
+}
 
 function generateInviteCode(length = 8) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Nincs O, 0, I, 1
@@ -54,6 +73,17 @@ export async function GET(req: NextRequest) {
   if (decoded.role !== "ADMIN") {
     return NextResponse.json({ message: "Csak admin láthatja!" }, { status: 403 });
   }
-  const codes = await prisma.inviteCode.findMany({ orderBy: { code: "asc" } });
-  return NextResponse.json({ codes });
+  const [codes, emailLogSetting] = await Promise.all([
+    prisma.inviteCode.findMany({ orderBy: { code: "asc" } }),
+    prisma.setting.findUnique({ where: { key: INVITE_EMAIL_LOG_KEY } }),
+  ]);
+
+  const emailLog = parseInviteEmailLog(emailLogSetting?.value ?? null);
+  const enrichedCodes = codes.map((item) => ({
+    ...item,
+    sentToEmail: emailLog[item.code]?.email ?? null,
+    sentAt: emailLog[item.code]?.sentAt ?? null,
+  }));
+
+  return NextResponse.json({ codes: enrichedCodes });
 }
