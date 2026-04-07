@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
@@ -75,6 +76,31 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+
+    const supportedSheets = [
+      "Setting",
+      "User",
+      "InviteCode",
+      "Event",
+      "CreditPool",
+      "DailyPool",
+      "ChatMessage",
+      "Bet",
+    ];
+
+    const schemaModels = Prisma.dmmf.datamodel.models.map((model) => model.name);
+    const unsupportedModels = schemaModels.filter((name) => !supportedSheets.includes(name));
+
+    if (unsupportedModels.length > 0) {
+      return NextResponse.json(
+        {
+          message:
+            `Az import route még nem támogatja az összes jelenlegi modellt. Hiányzó modellek: ${unsupportedModels.join(", ")}.` +
+            " Frissítsd az import logikát, hogy ne legyen részleges visszaállítás.",
+        },
+        { status: 400 }
+      );
+    }
 
     const settings = readSheet(workbook, "Setting");
     const users = readSheet(workbook, "User");

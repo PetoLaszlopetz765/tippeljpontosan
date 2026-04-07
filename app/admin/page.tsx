@@ -458,7 +458,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-indigo-300 p-8">
             <h2 className="text-xl font-extrabold text-indigo-800 mb-4">📤 Adat export (Excel)</h2>
             <p className="text-gray-700 mb-4">
-              Letölti a fő táblák teljes tartalmát egy .xlsx fájlba (Setting, User, InviteCode, Event, Bet, CreditPool, DailyPool, ChatMessage).
+              Letölti az összes jelenlegi Prisma modell teljes tartalmát egy .xlsx fájlba.
             </p>
             <button
               onClick={handleExport}
@@ -475,7 +475,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-amber-300 p-8">
             <h2 className="text-xl font-extrabold text-amber-800 mb-4">📥 Adat import (Excel)</h2>
             <p className="text-gray-700 mb-4">
-              Korábban exportált .xlsx fájl visszatöltése. A meglévő sorokat frissíti, a hiányzókat létrehozza.
+              Korábban exportált .xlsx fájl visszatöltése. A meglévő sorokat frissíti, a hiányzókat létrehozza. Ha új modell jelent meg a sémában, az import figyelmeztet és leáll, hogy ne legyen részleges visszaállítás.
             </p>
             <input
               type="file"
@@ -498,7 +498,7 @@ export default function AdminPage() {
         {/* Hard reset panel: legalul, extra védelemmel */}
         <div className="bg-white rounded-2xl shadow-sm border border-red-300 p-8 mt-16 mb-8 flex flex-col items-center">
           <h2 className="text-xl font-extrabold text-red-800 mb-4">⚠️ Hard Reset</h2>
-          <p className="text-red-700 mb-4 text-center">Ez a gomb minden felhasználót, eseményt és tippet töröl! Csak admin használhatja.<br/>A törléshez add meg újra az admin jelszavad!</p>
+          <p className="text-red-700 mb-4 text-center">Ez a művelet törli a tippeket, eseményeket, napi poolokat, chat üzeneteket, meghívókódokat, beállításokat és minden nem admin felhasználót. Csak admin használhatja.<br/>A törléshez add meg újra az admin jelszavad!</p>
           <input
             type="password"
             placeholder="Admin jelszó"
