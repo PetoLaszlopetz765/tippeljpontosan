@@ -8,6 +8,10 @@ function toBase64Url(input: string) {
     .replace(/=+$/g, "");
 }
 
+function encodeMimeWordUtf8(input: string) {
+  return `=?UTF-8?B?${Buffer.from(input, "utf8").toString("base64")}?=`;
+}
+
 function buildOAuthClientFromEnv() {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
@@ -39,8 +43,10 @@ export async function sendInviteCodeEmail(params: {
 
   const fromLabel = process.env.INVITE_EMAIL_FROM_NAME || "Tippelj Pontosan";
   const fromAddress = process.env.INVITE_EMAIL_FROM_ADDRESS;
-  const fromHeader = fromAddress ? `${fromLabel} <${fromAddress}>` : fromLabel;
+  const encodedFromLabel = encodeMimeWordUtf8(fromLabel);
+  const fromHeader = fromAddress ? `${encodedFromLabel} <${fromAddress}>` : encodedFromLabel;
   const subject = "Meghívó a Tippelj Pontosan játékhoz";
+  const encodedSubject = encodeMimeWordUtf8(subject);
 
   const textLines = [
     "Kedves Meghívott!",
@@ -60,7 +66,7 @@ export async function sendInviteCodeEmail(params: {
   const raw = [
     `From: ${fromHeader}`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     "MIME-Version: 1.0",
     "Content-Type: text/plain; charset=UTF-8",
     "",
