@@ -23,6 +23,8 @@ export default function Navbar() {
   const [isClient, setIsClient] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [rank, setRank] = useState<number | null>(null);
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("light");
 
@@ -44,8 +46,41 @@ export default function Navbar() {
   }
 
   useEffect(() => {
+    async function fetchQuickStats(token: string, userId: number) {
+      try {
+        const [profileRes, leaderboardRes] = await Promise.all([
+          fetch("/api/profil", {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch("/api/leaderboard", { cache: "no-store" }),
+        ]);
+
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          setCredits(Number(profile?.credits ?? 0));
+        } else {
+          setCredits(null);
+        }
+
+        if (leaderboardRes.ok) {
+          const leaderboard = await leaderboardRes.json();
+          const position = Array.isArray(leaderboard)
+            ? leaderboard.findIndex((item: any) => Number(item?.id) === userId)
+            : -1;
+          setRank(position >= 0 ? position + 1 : null);
+        } else {
+          setRank(null);
+        }
+      } catch {
+        setCredits(null);
+        setRank(null);
+      }
+    }
+
     function updateNavbarState() {
       const token = sessionStorage.getItem("token");
+      const userIdRaw = sessionStorage.getItem("userId");
       let userRole = sessionStorage.getItem("role");
       let userName = sessionStorage.getItem("username");
       userRole = userRole ? userRole.toUpperCase() : null;
@@ -56,6 +91,17 @@ export default function Navbar() {
         setRole("USER");
       } else {
         setRole(userRole);
+      }
+
+      if (!hasToken) {
+        setCredits(null);
+        setRank(null);
+        return;
+      }
+
+      const userId = Number(userIdRaw);
+      if (token && Number.isFinite(userId) && userId > 0) {
+        fetchQuickStats(token, userId);
       }
     }
     setIsClient(true);
@@ -138,6 +184,8 @@ export default function Navbar() {
     setIsLoggedIn(false);
     setRole(null);
     setUsername(null);
+    setCredits(null);
+    setRank(null);
     
     // Oldal újratöltése és login-re redirect
     setTimeout(() => {
@@ -148,21 +196,28 @@ export default function Navbar() {
   return (
     <header className="w-full bg-white dark:bg-slate-900 shadow-md border-b border-gray-200 dark:border-slate-800">
       <nav className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold text-green-700">
             <Image
               src="/weblogo.png"
               alt="Tippeljpontosan logó"
-              width={40}
-              height={40}
-              className="h-10 w-auto rounded-md"
+              width={56}
+              height={56}
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-md object-cover"
               priority
             />
             <span className="hidden sm:inline">⚽ Tippelde</span>
             <span className="sm:hidden">⚽ Tipp</span>
           </Link>
           {isLoggedIn && username && (
-            <span className="text-sm font-semibold text-blue-900 dark:text-blue-100 bg-blue-50 dark:bg-blue-900/40 rounded-lg px-3 py-1 ml-2">{username}</span>
+            <div className="min-w-0">
+              <span className="inline-block text-sm font-semibold text-blue-900 dark:text-blue-100 bg-blue-50 dark:bg-blue-900/40 rounded-lg px-3 py-1">
+                {username}
+              </span>
+              <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 truncate">
+                {rank ? `Helyezés: #${rank}` : "Helyezés: -"} | {credits !== null ? `Kredit: ${credits}` : "Kredit: -"}
+              </p>
+            </div>
           )}
         </div>
         {/* Desktop menu */}

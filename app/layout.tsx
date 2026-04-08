@@ -20,6 +20,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "⚽ Tippelde",
   description: "Baráti tippjáték – valódi pénz nélkül",
+  icons: {
+    icon: "/weblogo.png",
+    shortcut: "/weblogo.png",
+    apple: "/weblogo.png",
+  },
 };
 
 const themeBootstrapScript = `
