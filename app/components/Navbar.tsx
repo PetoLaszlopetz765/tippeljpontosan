@@ -2,6 +2,7 @@
 
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 type ThemeMode = "system" | "dark" | "light";
@@ -148,8 +149,17 @@ export default function Navbar() {
     <header className="w-full bg-white dark:bg-slate-900 shadow-md border-b border-gray-200 dark:border-slate-800">
       <nav className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-lg font-bold text-green-700">
-            ⚽ Tippelde
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-green-700">
+            <Image
+              src="/weblogo.png"
+              alt="Tippeljpontosan logó"
+              width={40}
+              height={40}
+              className="h-10 w-auto rounded-md"
+              priority
+            />
+            <span className="hidden sm:inline">⚽ Tippelde</span>
+            <span className="sm:hidden">⚽ Tipp</span>
           </Link>
           {isLoggedIn && username && (
             <span className="text-sm font-semibold text-blue-900 dark:text-blue-100 bg-blue-50 dark:bg-blue-900/40 rounded-lg px-3 py-1 ml-2">{username}</span>

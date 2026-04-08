@@ -37,7 +37,7 @@ export async function sendInviteCodeEmail(params: {
   inviteCode: string;
   appUrl?: string;
 }) {
-  const { to, inviteCode } = params;
+  const { to, inviteCode, appUrl } = params;
   const auth = buildOAuthClientFromEnv();
   const gmail = google.gmail({ version: "v1", auth });
 
@@ -47,30 +47,43 @@ export async function sendInviteCodeEmail(params: {
   const fromHeader = fromAddress ? `${encodedFromLabel} <${fromAddress}>` : encodedFromLabel;
   const subject = "Meghívó a Tippelj Pontosan játékhoz";
   const encodedSubject = encodeMimeWordUtf8(subject);
+  const baseAppUrl =
+    appUrl ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://tippeljpontosan.vercel.app");
+  const normalizedBaseAppUrl = baseAppUrl.replace(/\/$/, "");
+  const logoUrl = `${normalizedBaseAppUrl}/weblogo.png`;
 
-  const textLines = [
-    "Kedves Meghívott!",
-    "",
-    "A tippeljpontosan csapata meghívott a játékra.",
-    "A meghívó kódod:",
-    inviteCode,
-    "Kérjük a megadott a linken regisztrálj.",
-    "Link:https://tippeljpontosan.vercel.app/",
-    "Kérjük, hogy a regisztráció során olyan felhasználó nevet adj meg, ami alapján a csapat be tud azonosítani.",
-    "",
-    "Üdv",
-    "",
-    "Tippeljpontosan",
-  ];
+  const htmlBody = `
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.5; color: #111827;">
+  <p>Kedves Meghívott!</p>
+  <p>A tippeljpontosan csapata meghívott a játékra.</p>
+  <p><strong>A meghívó kódod:</strong><br/>${inviteCode}</p>
+  <p>
+    Kérjük a megadott a linken regisztrálj.<br/>
+    Link: <a href="https://tippeljpontosan.vercel.app/" target="_blank" rel="noopener noreferrer">https://tippeljpontosan.vercel.app/</a>
+  </p>
+  <p>
+    Kérjük, hogy a regisztráció során olyan felhasználó nevet adj meg, ami alapján a csapat be tud azonosítani.
+  </p>
+  <p>Üdv</p>
+  <p><strong>Tippeljpontosan</strong></p>
+  <p style="margin-top: 14px;">
+    <img src="${logoUrl}" alt="Tippeljpontosan logó" style="display:block; width: 170px; max-width: 100%; height: auto;"/>
+  </p>
+</div>
+`.trim();
 
   const raw = [
     `From: ${fromHeader}`,
     `To: ${to}`,
     `Subject: ${encodedSubject}`,
     "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Type: text/html; charset=UTF-8",
     "",
-    textLines.join("\n"),
+    htmlBody,
   ].join("\n");
 
   const encoded = toBase64Url(raw);
