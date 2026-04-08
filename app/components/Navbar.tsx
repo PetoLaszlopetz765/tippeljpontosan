@@ -195,8 +195,8 @@ export default function Navbar() {
 
   return (
     <header className="w-full bg-white dark:bg-slate-900 shadow-md border-b border-gray-200 dark:border-slate-800">
-      <nav className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <nav className="max-w-6xl mx-auto px-4 py-3 flex items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold text-green-700">
             <Image
               src="/weblogo.png"
@@ -221,7 +221,7 @@ export default function Navbar() {
           )}
         </div>
         {/* Desktop menu */}
-        <div className="hidden lg:flex ml-auto items-center justify-end gap-4 text-sm font-medium whitespace-nowrap">
+        <div className="hidden lg:flex ml-auto items-center justify-end gap-x-4 gap-y-2 text-sm font-medium flex-wrap max-w-[68%]">
           {!isClient ? (
             null
           ) : isLoggedIn && role === "ADMIN" ? (

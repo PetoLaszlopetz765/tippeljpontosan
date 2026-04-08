@@ -1,4 +1,6 @@
 import { google } from "googleapis";
+import { readFile } from "fs/promises";
+import path from "path";
 
 function toBase64Url(input: string) {
   return Buffer.from(input)
@@ -54,7 +56,20 @@ export async function sendInviteCodeEmail(params: {
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : "https://tippeljpontosan.vercel.app");
   const normalizedBaseAppUrl = baseAppUrl.replace(/\/$/, "");
-  const logoUrl = `${normalizedBaseAppUrl}/weblogo.png`;
+  const fallbackLogoUrl = `${normalizedBaseAppUrl}/weblogo.png`;
+
+  const logoPath = path.join(process.cwd(), "public", "weblogo.png");
+  let inlineLogoBase64: string | null = null;
+  try {
+    const logoBuffer = await readFile(logoPath);
+    inlineLogoBase64 = logoBuffer.toString("base64");
+  } catch {
+    inlineLogoBase64 = null;
+  }
+
+  const logoTag = inlineLogoBase64
+    ? '<img src="cid:weblogo" alt="Tippeljpontosan logó" style="display:block; width: 170px; max-width: 100%; height: auto;"/>'
+    : `<img src="${fallbackLogoUrl}" alt="Tippeljpontosan logó" style="display:block; width: 170px; max-width: 100%; height: auto;"/>`;
 
   const htmlBody = `
 <div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.5; color: #111827;">
@@ -71,20 +86,52 @@ export async function sendInviteCodeEmail(params: {
   <p>Üdv</p>
   <p><strong>Tippeljpontosan</strong></p>
   <p style="margin-top: 14px;">
-    <img src="${logoUrl}" alt="Tippeljpontosan logó" style="display:block; width: 170px; max-width: 100%; height: auto;"/>
+    ${logoTag}
   </p>
 </div>
 `.trim();
 
-  const raw = [
+  const mixedBoundary = "tippeljpontosan_mixed_boundary";
+  const relatedBoundary = "tippeljpontosan_related_boundary";
+
+  const mimeParts: string[] = [
     `From: ${fromHeader}`,
     `To: ${to}`,
     `Subject: ${encodedSubject}`,
     "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary=\"${mixedBoundary}\"`,
+    "",
+    `--${mixedBoundary}`,
+    `Content-Type: multipart/related; boundary=\"${relatedBoundary}\"`,
+    "",
+    `--${relatedBoundary}`,
     "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
     "",
     htmlBody,
-  ].join("\n");
+    "",
+  ];
+
+  if (inlineLogoBase64) {
+    mimeParts.push(
+      `--${relatedBoundary}`,
+      "Content-Type: image/png; name=\"weblogo.png\"",
+      "Content-Transfer-Encoding: base64",
+      "Content-ID: <weblogo>",
+      "Content-Disposition: inline; filename=\"weblogo.png\"",
+      "",
+      inlineLogoBase64,
+      ""
+    );
+  }
+
+  mimeParts.push(
+    `--${relatedBoundary}--`,
+    "",
+    `--${mixedBoundary}--`
+  );
+
+  const raw = mimeParts.join("\n");
 
   const encoded = toBase64Url(raw);
 
