@@ -4,17 +4,35 @@ import crypto from "crypto";
 import { sendPasswordResetEmail } from "@/lib/gmail";
 
 function getAppUrl() {
+  const normalizeUrl = (value: string) => (value.startsWith("http") ? value : `https://${value}`);
+
+  const isLocalhostUrl = (value: string) => {
+    try {
+      const parsed = new URL(normalizeUrl(value));
+      return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    } catch {
+      return false;
+    }
+  };
+
+  const isProd = process.env.NODE_ENV === "production";
+
   const explicitAppUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (explicitAppUrl) {
-    return explicitAppUrl;
+  if (explicitAppUrl && (!isProd || !isLocalhostUrl(explicitAppUrl))) {
+    return normalizeUrl(explicitAppUrl);
   }
 
-  const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  if (!vercelDomain) {
-    return "https://tippeljpontosan.vercel.app";
+  const vercelProdDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercelProdDomain) {
+    return normalizeUrl(vercelProdDomain);
   }
 
-  return vercelDomain.startsWith("http") ? vercelDomain : `https://${vercelDomain}`;
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) {
+    return normalizeUrl(vercelUrl);
+  }
+
+  return "https://tippeljpontosan.vercel.app";
 }
 
 function genericResponse() {
@@ -81,9 +99,6 @@ export async function POST(req: NextRequest) {
     return genericResponse();
   } catch (error) {
     console.error("Forgot password error:", error);
-    return NextResponse.json(
-      { message: "Hiba történt a jelszó-visszaállítási kérés feldolgozása közben." },
-      { status: 500 }
-    );
+    return genericResponse();
   }
 }
