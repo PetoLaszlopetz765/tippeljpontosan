@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [acceptedRules, setAcceptedRules] = useState(false);
@@ -33,7 +34,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, inviteCode }),
+        body: JSON.stringify({ username, email, password, inviteCode }),
       });
 
       if (res.ok) {
@@ -74,6 +75,22 @@ export default function RegisterPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="pl. petz765"
+                className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
+                  placeholder:text-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1">
+                Email cím
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="pl. valaki@email.com"
                 className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold
                   placeholder:text-gray-400
                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"

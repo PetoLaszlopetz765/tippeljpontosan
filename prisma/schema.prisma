@@ -16,11 +16,17 @@ model Setting {
 model User {
   id       Int     @id @default(autoincrement())
   username String  @unique
+  email    String?
   password String
   role     String  @default("USER")
   points   Int     @default(0)
   credits  Int     @default(0)
   chatLastReadAt DateTime?
+  emailVerifiedAt DateTime?
+  passwordResetTokenHash String?
+  passwordResetTokenExpiresAt DateTime?
+  passwordResetRequestedAt DateTime?
+  passwordResetUsedAt DateTime?
   tipsCountAdjustment Int @default(0)
   perfectCountAdjustment Int @default(0)
   bets     Bet[]

@@ -8,7 +8,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { username, password, inviteCode, role } = body;
+    const { username, password, inviteCode, role, email } = body;
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
     if (!username || !password || !inviteCode) {
       return NextResponse.json(
@@ -60,6 +61,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (userRole !== "ADMIN") {
+      if (!normalizedEmail) {
+        return NextResponse.json(
+          { message: "Email cím megadása kötelező." },
+          { status: 400 }
+        );
+      }
+
+      const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+      if (!validEmail) {
+        return NextResponse.json(
+          { message: "Érvénytelen email cím." },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (normalizedEmail) {
+      const existingEmailUser = await prisma.user.findFirst({
+        where: { email: normalizedEmail },
+        select: { id: true },
+      });
+
+      if (existingEmailUser) {
+        return NextResponse.json(
+          { message: "Ez az email cím már használatban van." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Kezdő kredit lekérése a Setting táblából
     let initialCredits = 0;
     const setting = await prisma.setting.findUnique({ where: { key: "initial_credits" } });
@@ -70,6 +102,7 @@ export async function POST(req: NextRequest) {
     await prisma.user.create({
       data: {
         username,
+        email: normalizedEmail || null,
         password: hashedPassword,
         credits: initialCredits,
         role: userRole,

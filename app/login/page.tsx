@@ -124,6 +124,11 @@ export default function LoginPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm7-2s-3-5-10-5S2 10 2 10s3 5 10 5 10-5 10-5z" /></svg>
                 )}
               </button>
+              <div className="mt-2 text-right">
+                <Link className="text-sm font-semibold text-blue-700 hover:text-blue-800" href="/forgot-password">
+                  Elfelejtetted a jelszavad?
+                </Link>
+              </div>
             </div>
 
             {message && (
