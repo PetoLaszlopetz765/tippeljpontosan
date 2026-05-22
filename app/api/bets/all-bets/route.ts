@@ -54,7 +54,15 @@ export async function GET(req: NextRequest) {
           },
         },
         event: {
-          include: {
+          select: {
+            id: true,
+            homeTeam: true,
+            awayTeam: true,
+            kickoffTime: true,
+            status: true,
+            finalHomeGoals: true,
+            finalAwayGoals: true,
+            creditCost: true,
             dailyPool: true,
           },
         },
@@ -72,7 +80,17 @@ export async function GET(req: NextRequest) {
 
     // Dinamikusan átszámoljuk a carriedFromPrevious értékeket
     const allEvents = await prisma.event.findMany({
-      include: { dailyPool: true },
+      select: {
+        id: true,
+        homeTeam: true,
+        awayTeam: true,
+        kickoffTime: true,
+        status: true,
+        finalHomeGoals: true,
+        finalAwayGoals: true,
+        creditCost: true,
+        dailyPool: true,
+      },
       orderBy: { kickoffTime: "asc" },
     });
 

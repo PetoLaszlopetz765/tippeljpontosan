@@ -1,26 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+function isMissingColumnError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const withCode = err as { code?: string; message?: string };
+  return withCode.code === "P2022" || (withCode.message ?? "").toLowerCase().includes("column");
+}
+
 export async function GET(req: NextRequest) {
   try {
     // Összes felhasználó lekérdezése
     // A pont forrása a User.points mező (admin által is szerkeszthető)
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        points: true,
-        credits: true,
-        role: true,
-        tipsCountAdjustment: true,
-        perfectCountAdjustment: true,
-        bets: {
-          select: {
-            pointsAwarded: true,
+    let users: Array<{
+      id: number;
+      username: string;
+      points: number;
+      credits: number;
+      role: string;
+      tipsCountAdjustment: number;
+      perfectCountAdjustment: number;
+      bets: Array<{ pointsAwarded: number }>;
+    }>;
+
+    try {
+      users = await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          points: true,
+          credits: true,
+          role: true,
+          tipsCountAdjustment: true,
+          perfectCountAdjustment: true,
+          bets: {
+            select: {
+              pointsAwarded: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (queryErr) {
+      if (!isMissingColumnError(queryErr)) {
+        throw queryErr;
+      }
+
+      const legacyUsers = await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          points: true,
+          credits: true,
+          role: true,
+          bets: {
+            select: {
+              pointsAwarded: true,
+            },
+          },
+        },
+      });
+
+      users = legacyUsers.map((user) => ({
+        ...user,
+        tipsCountAdjustment: 0,
+        perfectCountAdjustment: 0,
+      }));
+    }
 
     // Tipp statisztikák bets-ből, pont pedig User.points-ból
     const leaderboard = users.map((user) => {

@@ -4,6 +4,12 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
+function isMissingColumnError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const withCode = err as { code?: string; message?: string };
+  return withCode.code === "P2022" || (withCode.message ?? "").toLowerCase().includes("column");
+}
+
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -17,18 +23,55 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       return NextResponse.json({ message: "Érvénytelen token" }, { status: 401 });
     }
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        username: true,
-        credits: true,
-        points: true,
-        role: true,
-        tipsCountAdjustment: true,
-        perfectCountAdjustment: true,
-      },
-    });
+    let user:
+      | {
+          id: number;
+          username: string;
+          credits: number;
+          points: number;
+          role: string;
+          tipsCountAdjustment: number;
+          perfectCountAdjustment: number;
+        }
+      | null;
+
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          username: true,
+          credits: true,
+          points: true,
+          role: true,
+          tipsCountAdjustment: true,
+          perfectCountAdjustment: true,
+        },
+      });
+    } catch (queryErr) {
+      if (!isMissingColumnError(queryErr)) {
+        throw queryErr;
+      }
+
+      const legacyUser = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          username: true,
+          credits: true,
+          points: true,
+          role: true,
+        },
+      });
+
+      user = legacyUser
+        ? {
+            ...legacyUser,
+            tipsCountAdjustment: 0,
+            perfectCountAdjustment: 0,
+          }
+        : null;
+    }
     if (!user) return NextResponse.json({ message: "Nincs ilyen felhasználó" }, { status: 404 });
 
     const [baseTipsCount, basePerfectCount] = await Promise.all([

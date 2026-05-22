@@ -5,6 +5,12 @@ import { autoCloseStartedEvents } from "@/lib/eventStatus";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
+function isMissingColumnError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const withCode = err as { code?: string; message?: string };
+  return withCode.code === "P2022" || (withCode.message ?? "").toLowerCase().includes("column");
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Auth ellenőrzés
@@ -65,16 +71,33 @@ export async function POST(req: NextRequest) {
 
     const kickoffUTC = parseBudapestToUTC(kickoffTime);
 
-    const event = await prisma.event.create({
-      data: {
-        homeTeam,
-        awayTeam,
-        league: typeof league === "string" && league.trim() ? league.trim() : "Ismeretlen liga",
-        kickoffTime: kickoffUTC,
-        status: status || "OPEN",
-        creditCost: creditCost || 100,
-      },
-    });
+    let event;
+    try {
+      event = await prisma.event.create({
+        data: {
+          homeTeam,
+          awayTeam,
+          league: typeof league === "string" && league.trim() ? league.trim() : "Ismeretlen liga",
+          kickoffTime: kickoffUTC,
+          status: status || "OPEN",
+          creditCost: creditCost || 100,
+        },
+      });
+    } catch (createErr) {
+      if (!isMissingColumnError(createErr)) {
+        throw createErr;
+      }
+
+      event = await prisma.event.create({
+        data: {
+          homeTeam,
+          awayTeam,
+          kickoffTime: kickoffUTC,
+          status: status || "OPEN",
+          creditCost: creditCost || 100,
+        },
+      });
+    }
 
     return NextResponse.json(event);
   } catch (err) {
@@ -90,12 +113,30 @@ export async function GET() {
   try {
     await autoCloseStartedEvents();
 
-    const events = await prisma.event.findMany({
-      include: {
+    let events = await prisma.event.findMany({
+      select: {
+        id: true,
+        homeTeam: true,
+        awayTeam: true,
+        league: true,
+        kickoffTime: true,
+        status: true,
+        finalHomeGoals: true,
+        finalAwayGoals: true,
+        creditCost: true,
         dailyPool: true,
       },
       orderBy: { kickoffTime: "asc" },
     });
+
+    if (!Array.isArray(events)) {
+      events = [];
+    }
+
+    // Backward compatible fallback: if production DB still has no Event.league column
+    if (events.length === 0) {
+      // no-op, keep empty list
+    }
 
     // Dinamikus, determinisztikus göngyölítés:
     // carriedFromPrevious mindig az előző, KI NEM osztott összeg legyen.
@@ -115,6 +156,47 @@ export async function GET() {
 
     return NextResponse.json(events);
   } catch (err) {
+    if (isMissingColumnError(err)) {
+      try {
+        const eventsWithoutLeague = await prisma.event.findMany({
+          select: {
+            id: true,
+            homeTeam: true,
+            awayTeam: true,
+            kickoffTime: true,
+            status: true,
+            finalHomeGoals: true,
+            finalAwayGoals: true,
+            creditCost: true,
+            dailyPool: true,
+          },
+          orderBy: { kickoffTime: "asc" },
+        });
+
+        const normalizedEvents = eventsWithoutLeague.map((event) => ({
+          ...event,
+          league: "Ismeretlen liga",
+        }));
+
+        let runningCarry = 0;
+        for (const event of normalizedEvents) {
+          if (!event.dailyPool) continue;
+
+          const currentDaily = event.dailyPool.totalDaily || 0;
+          event.dailyPool.carriedFromPrevious = runningCarry;
+
+          if (event.dailyPool.totalDistributed === 0) {
+            runningCarry = runningCarry + currentDaily;
+          } else {
+            runningCarry = 0;
+          }
+        }
+
+        return NextResponse.json(normalizedEvents);
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+      }
+    }
     console.error(err);
     return NextResponse.json(
       { message: "Hiba az események lekérésekor" },
