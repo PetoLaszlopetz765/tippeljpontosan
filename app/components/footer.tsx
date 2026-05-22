@@ -14,6 +14,9 @@ export default function Footer() {
           />
         </div>
         made by <span className="font-medium text-gray-700 dark:text-gray-100">@petz765</span>
+        <div className="mt-1">
+          <a href="mailto:tippeljpontosan@gmail.com" className="text-blue-500 hover:underline dark:text-blue-400">tippeljpontosan@gmail.com</a>
+        </div>
       </div>
     </footer>
   );

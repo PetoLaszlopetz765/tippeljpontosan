@@ -27,7 +27,7 @@ export default function SzabalyzatPage() {
               <li>A Tippeldében kizárólag meghívásos alapon lehet részt venni.</li>
               <li>A játék szervezője: <strong>Aracsi Szilárd</strong>.</li>
               <li>A nevezés e-mailben történik a szervező részére.</li>
-              <li>Nevezési díj: <strong>3.000 kredit / fő</strong>.</li>
+              <li>Nevezési díj: <strong>4.000 kredit / fő</strong>.</li>
               <li>A nevezési díj egyenlegként kerül jóváírásra.</li>
               <li>A játék elindulását követően új jelentkezés nem lehetséges.</li>
             </ul>
@@ -89,6 +89,12 @@ export default function SzabalyzatPage() {
             </p>
             <p className="mt-2 font-semibold">
               Sok sikert és jó szórakozást! ⚽
+            </p>
+            <p className="mt-2 text-sm">
+              Kapcsolat:{" "}
+              <a href="mailto:tippeljpontosan@gmail.com" className="text-blue-500 hover:underline">
+                tippeljpontosan@gmail.com
+              </a>
             </p>
           </section>
 

@@ -126,6 +126,7 @@ export default function Navbar() {
     media.addEventListener("change", onSystemThemeChange);
 
     window.addEventListener("storage", updateNavbarState);
+    window.addEventListener("navbarStatsRefresh", updateNavbarState);
 
     // --- Robust inactivity logout (mobile compatible) ---
     const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 perc (session cookie timeout-al sync)
@@ -163,6 +164,7 @@ export default function Navbar() {
     return () => {
       media.removeEventListener("change", onSystemThemeChange);
       window.removeEventListener("storage", updateNavbarState);
+      window.removeEventListener("navbarStatsRefresh", updateNavbarState);
       activityEvents.forEach(evt => window.removeEventListener(evt, setLastActivity));
       document.removeEventListener("visibilitychange", checkInactivity);
       clearInterval(interval);

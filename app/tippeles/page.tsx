@@ -156,6 +156,7 @@ export default function TippelesPage() {
         await reloadUserBets(token);
         localStorage.setItem("refreshBets", Date.now().toString());
         localStorage.setItem("refreshEvents", Date.now().toString());
+        window.dispatchEvent(new Event("navbarStatsRefresh"));
       } else {
         const data = await res.json();
         setMessage(data.message || "❌ Hiba történt a tipp leadásakor.");

@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Kezdő kredit lekérése a Setting táblából
-    let initialCredits = 0;
+    let initialCredits = 4000;
     const setting = await prisma.setting.findUnique({ where: { key: "initial_credits" } });
     if (setting && !isNaN(Number(setting.value))) {
       initialCredits = Number(setting.value);

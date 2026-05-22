@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 export async function GET() {
   // Lekérdezi az aktuális kezdő kreditet
   const setting = await prisma.setting.findUnique({ where: { key: "initial_credits" } });
-  return NextResponse.json({ initialCredits: setting ? Number(setting.value) : 0 });
+  return NextResponse.json({ initialCredits: setting ? Number(setting.value) : 4000 });
 }
 
 export async function POST(req: NextRequest) {
