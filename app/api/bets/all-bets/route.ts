@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 
+function isMissingColumnError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const withCode = err as { code?: string; message?: string };
+  return withCode.code === "P2022" || (withCode.message ?? "").toLowerCase().includes("column");
+}
+
 export async function GET(req: NextRequest) {
   try {
     // User azonosítása tokenből
@@ -36,42 +42,95 @@ export async function GET(req: NextRequest) {
     }
 
     // Minden tipp lekérése, admin tippek nélkül, csak bejelentkezett felhasználónak
-    const bets = await prisma.bet.findMany({
-      where: {
-        eventId: { in: visibleEventIds },
-        user: {
-          username: {
-            not: "admin"
+    let bets: any[];
+    try {
+      bets = await prisma.bet.findMany({
+        where: {
+          eventId: { in: visibleEventIds },
+          user: {
+            username: {
+              not: "admin"
+            }
           }
-        }
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            points: true,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              points: true,
+            },
+          },
+          event: {
+            select: {
+              id: true,
+              homeTeam: true,
+              awayTeam: true,
+              league: true,
+              kickoffTime: true,
+              status: true,
+              finalHomeGoals: true,
+              finalAwayGoals: true,
+              creditCost: true,
+              dailyPool: true,
+            },
           },
         },
+        orderBy: [
+          { event: { kickoffTime: "desc" } },
+          { user: { username: "asc" } },
+        ],
+      });
+    } catch (queryErr) {
+      if (!isMissingColumnError(queryErr)) {
+        throw queryErr;
+      }
+
+      const legacyBets = await prisma.bet.findMany({
+        where: {
+          eventId: { in: visibleEventIds },
+          user: {
+            username: {
+              not: "admin"
+            }
+          }
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              points: true,
+            },
+          },
+          event: {
+            select: {
+              id: true,
+              homeTeam: true,
+              awayTeam: true,
+              kickoffTime: true,
+              status: true,
+              finalHomeGoals: true,
+              finalAwayGoals: true,
+              creditCost: true,
+              dailyPool: true,
+            },
+          },
+        },
+        orderBy: [
+          { event: { kickoffTime: "desc" } },
+          { user: { username: "asc" } },
+        ],
+      });
+
+      bets = legacyBets.map((bet) => ({
+        ...bet,
         event: {
-          select: {
-            id: true,
-            homeTeam: true,
-            awayTeam: true,
-            kickoffTime: true,
-            status: true,
-            finalHomeGoals: true,
-            finalAwayGoals: true,
-            creditCost: true,
-            dailyPool: true,
-          },
+          ...bet.event,
+          league: "Ismeretlen liga",
         },
-      },
-      orderBy: [
-        { event: { kickoffTime: "desc" } },
-        { user: { username: "asc" } },
-      ],
-    });
+      }));
+    }
     console.log("API /bets/all-bets: bets count:", bets.length);
     if (bets.length > 0) {
       console.log("API /bets/all-bets: first bet event:", bets[0].event);
@@ -79,20 +138,48 @@ export async function GET(req: NextRequest) {
     }
 
     // Dinamikusan átszámoljuk a carriedFromPrevious értékeket
-    const allEvents = await prisma.event.findMany({
-      select: {
-        id: true,
-        homeTeam: true,
-        awayTeam: true,
-        kickoffTime: true,
-        status: true,
-        finalHomeGoals: true,
-        finalAwayGoals: true,
-        creditCost: true,
-        dailyPool: true,
-      },
-      orderBy: { kickoffTime: "asc" },
-    });
+    let allEvents: any[];
+    try {
+      allEvents = await prisma.event.findMany({
+        select: {
+          id: true,
+          homeTeam: true,
+          awayTeam: true,
+          league: true,
+          kickoffTime: true,
+          status: true,
+          finalHomeGoals: true,
+          finalAwayGoals: true,
+          creditCost: true,
+          dailyPool: true,
+        },
+        orderBy: { kickoffTime: "asc" },
+      });
+    } catch (queryErr) {
+      if (!isMissingColumnError(queryErr)) {
+        throw queryErr;
+      }
+
+      const legacyEvents = await prisma.event.findMany({
+        select: {
+          id: true,
+          homeTeam: true,
+          awayTeam: true,
+          kickoffTime: true,
+          status: true,
+          finalHomeGoals: true,
+          finalAwayGoals: true,
+          creditCost: true,
+          dailyPool: true,
+        },
+        orderBy: { kickoffTime: "asc" },
+      });
+
+      allEvents = legacyEvents.map((event) => ({
+        ...event,
+        league: "Ismeretlen liga",
+      }));
+    }
 
     // Rekurzív pool halmozódás minden eseményre (időrendben)
     // Először építsünk egy eventId -> event map-et, hogy gyors legyen a lookup
