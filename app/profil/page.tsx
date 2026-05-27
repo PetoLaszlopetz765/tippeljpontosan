@@ -246,7 +246,7 @@ export default function ProfilPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {bets.map((bet) => (
-                      <tr key={bet.id} className="hover:bg-gray-50">
+                      <tr key={bet.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/70 transition-colors">
                         <td className="px-4 py-3">
                           <div>
                             <p className="font-semibold text-gray-900">
