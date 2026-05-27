@@ -66,6 +66,47 @@ export async function GET(req: NextRequest) {
       }));
     }
 
+    const distributedEvents = await prisma.event.findMany({
+      where: {
+        dailyPool: {
+          is: {
+            totalDistributed: {
+              gt: 0,
+            },
+          },
+        },
+      },
+      select: {
+        dailyPool: {
+          select: {
+            totalDistributed: true,
+          },
+        },
+        bets: {
+          select: {
+            userId: true,
+            pointsAwarded: true,
+          },
+        },
+      },
+    });
+
+    const winningsByUser = new Map<number, number>();
+    for (const event of distributedEvents) {
+      const totalDistributed = event.dailyPool?.totalDistributed || 0;
+      if (totalDistributed <= 0) continue;
+
+      const perfectBets = event.bets.filter((bet) => bet.pointsAwarded === 6);
+      if (perfectBets.length === 0) continue;
+
+      const winPerUser = Math.floor(totalDistributed / perfectBets.length);
+      if (winPerUser <= 0) continue;
+
+      for (const bet of perfectBets) {
+        winningsByUser.set(bet.userId, (winningsByUser.get(bet.userId) || 0) + winPerUser);
+      }
+    }
+
     // Tipp statisztikák bets-ből, pont pedig User.points-ból
     const leaderboard = users.map((user) => {
       const baseTipsCount = user.bets.length;
@@ -79,6 +120,7 @@ export async function GET(req: NextRequest) {
         points: user.points,
         tipsCount: Math.max(0, baseTipsCount + user.tipsCountAdjustment),
         perfectCount: Math.max(0, basePerfectCount + user.perfectCountAdjustment),
+        totalWinnings: winningsByUser.get(user.id) || 0,
       };
     }).sort((a, b) => b.points - a.points);
 
