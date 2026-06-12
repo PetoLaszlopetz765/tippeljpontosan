@@ -28,6 +28,22 @@ export default function Navbar() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("light");
 
+  function compareLeaderboardUsers(a: { points?: number; credits?: number; perfectCount?: number; username?: string }, b: { points?: number; credits?: number; perfectCount?: number; username?: string }) {
+    const pointsA = Number(a?.points ?? 0);
+    const pointsB = Number(b?.points ?? 0);
+    if (pointsB !== pointsA) return pointsB - pointsA;
+
+    const creditsA = Number(a?.credits ?? 0);
+    const creditsB = Number(b?.credits ?? 0);
+    if (creditsB !== creditsA) return creditsB - creditsA;
+
+    const perfectA = Number(a?.perfectCount ?? 0);
+    const perfectB = Number(b?.perfectCount ?? 0);
+    if (perfectB !== perfectA) return perfectB - perfectA;
+
+    return String(a?.username ?? "").localeCompare(String(b?.username ?? ""));
+  }
+
   function applyTheme(nextMode: ThemeMode) {
     const root = document.documentElement;
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -65,9 +81,13 @@ export default function Navbar() {
 
         if (leaderboardRes.ok) {
           const leaderboard = await leaderboardRes.json();
-          const position = Array.isArray(leaderboard)
-            ? leaderboard.findIndex((item: any) => Number(item?.id) === userId)
-            : -1;
+          const visibleLeaderboard = Array.isArray(leaderboard)
+            ? leaderboard
+                .filter((item: { role?: string }) => item?.role !== "ADMIN")
+                .slice()
+                .sort(compareLeaderboardUsers)
+            : [];
+          const position = visibleLeaderboard.findIndex((item: { id?: number }) => Number(item?.id) === userId);
           setRank(position >= 0 ? position + 1 : null);
         } else {
           setRank(null);
