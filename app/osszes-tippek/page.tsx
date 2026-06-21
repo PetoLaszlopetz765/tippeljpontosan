@@ -38,6 +38,12 @@ interface Bet {
     status: string;
     finalHomeGoals: number | null;
     finalAwayGoals: number | null;
+    creditCost: number;
+    dailyPool?: {
+      totalDaily: number;
+      carriedFromPrevious: number;
+      totalDistributed: number;
+    } | null;
   };
 }
 
@@ -45,6 +51,7 @@ export default function OsszesTippekPage() {
     // Pagination state for events
     const [visibleEventsCount, setVisibleEventsCount] = useState(5);
   const [tab] = useState<"ranking" | "bets">("bets");
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
   const [userEventIds, setUserEventIds] = useState<number[]>([]);
@@ -380,12 +387,11 @@ export default function OsszesTippekPage() {
             </div>
           </div>
         ) : (
-          // ÚJ: ÖSSZES TIPPEK TAB - események elkülönítve, csak akkor láthatóak a tippek, ha a user is tippelt az eseményre
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6">
             {(() => {
-              // Csoportosítás események szerint CSAK azokra, amikre a user tippelt (saját tippjei alapján)
-              const eventMap = new Map();
+              const eventMap = new Map<number, { event: Bet["event"]; bets: Bet[] }>();
               const allowedEventIds = new Set(userEventIds);
+
               bets
                 .filter(
                   (bet) =>
@@ -395,163 +401,78 @@ export default function OsszesTippekPage() {
                     allowedEventIds.has(bet.event.id)
                 )
                 .forEach((bet) => {
-                if (!eventMap.has(bet.event.id)) {
-                  eventMap.set(bet.event.id, {
-                    event: bet.event,
-                    bets: [],
-                  });
-                }
-                eventMap.get(bet.event.id).bets.push(bet);
-              });
-              // Csak azokat az eseményeket mutatjuk, amelyekre a user tippelt (tehát van legalább egy saját bet az adott event.id-re)
-              const events = Array.from(eventMap.values()).sort((a, b) => new Date(b.event.kickoffTime).getTime() - new Date(a.event.kickoffTime).getTime());
-              // Végeredmény nélküli események (mindig látszanak, ha tippelt)
-              const noResultEvents = events.filter(({ event }) => event.finalHomeGoals === null || event.finalAwayGoals === null);
-              // Végeredménnyel rendelkező események (paginálva)
-              const withResultEvents = events.filter(({ event }) => event.finalHomeGoals !== null && event.finalAwayGoals !== null);
-              const visibleWithResultEvents = withResultEvents.slice(0, visibleEventsCount);
-              // Kombinált lista: először a végeredmény nélküliek, utána a paginált lezártak
-              const paginatedEvents = [...noResultEvents, ...visibleWithResultEvents];
-              return <>
-                {paginatedEvents.map(({ event, bets }) => {
-                // Tipp lista és fejléc
-                  return (
-                  <div key={event.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-md border-2 border-purple-300 dark:border-purple-800 p-6 mb-4">
-                    {/* Esemény fejléc */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
-                      <div>
-                        <div className="text-lg font-bold text-purple-900">{event.homeTeam} – {event.awayTeam}</div>
-                        <div className="text-xs font-semibold text-indigo-700 mt-1">Liga: {event.league || "Ismeretlen liga"}</div>
-                        <div className="text-sm text-gray-600 dark:text-slate-300">{new Date(event.kickoffTime).toLocaleString("hu-HU", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" })}</div>
-                      </div>
-                      <div className="flex flex-col md:items-end gap-1">
-                        <span className="text-sm text-gray-700">Feltett kredit: <span className="font-semibold text-blue-900">{event.creditCost}</span></span>
-                        <span className="text-sm text-gray-700">Végeredmény: {event.finalHomeGoals !== null ? <span className="font-semibold text-green-900">{event.finalHomeGoals}–{event.finalAwayGoals}</span> : <span className="text-gray-400">-</span>}</span>
-                        {(() => {
-                          const eventDailyPool = (event as any).dailyPool;
-                          if (eventDailyPool) {
-                            const poolTotal = eventDailyPool.totalDaily + eventDailyPool.carriedFromPrevious;
-                            const distributed = eventDailyPool.totalDistributed || 0;
-                            if (distributed > 0) {
-                              return <span className="text-sm text-green-700">🏆 Pool szétosztva: <span className="font-semibold">{distributed} kredit</span></span>;
-                            } else if (poolTotal > 0) {
-                              return <span className="text-sm text-yellow-700">💰 Pool halmozódik: <span className="font-semibold">{poolTotal} kredit</span></span>;
-                            }
-                          }
-                          return null;
-                        })()}
-                      </div>
-                    </div>
-                    {/* Tipp lista */}
-                    {(() => {
-                      const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
-                      const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
-                      const winCount = winners.length;
-                      // Az esemény DailyPool-ját az event objektumból kapjuk (ha van)
-                      const eventDailyPool = (event as any).dailyPool;
-                      const totalDistributed = eventDailyPool?.totalDistributed || 0;
+                  if (!eventMap.has(bet.event.id)) {
+                    eventMap.set(bet.event.id, { event: bet.event, bets: [] });
+                  }
+                  eventMap.get(bet.event.id)?.bets.push(bet);
+                });
 
-                      // Asztali nézet: táblázat
-                      const tableView = (
-                        <div className="overflow-x-auto hidden md:block">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="bg-purple-50 dark:bg-purple-900/30 border-b border-purple-200 dark:border-purple-800">
-                                <th className="px-4 py-3 text-left font-semibold text-gray-900">Játékos</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Tippje</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Pont</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-900">Nyeremény kredit</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                              {bets.map((bet: any) => {
-                                let wonCredit = 0;
-                                // Calculate wonCredit for winners
-                                if (
-                                  event.finalHomeGoals !== null &&
-                                  bet.pointsAwarded === 6 &&
-                                  winCount > 0 &&
-                                  bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
-                                  totalDistributed > 0
-                                ) {
-                                  wonCredit = Math.floor(totalDistributed / winCount);
-                                }
-                                return (
-                                  <tr key={bet.id}>
-                                    <td className="px-4 py-3 text-left font-semibold text-gray-900">{bet.user.username}</td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className="font-bold text-purple-900 text-lg">{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
-                                        bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
-                                        bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
-                                        bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
-                                        "bg-purple-50 text-purple-900"
-                                      }`}>
-                                        {bet.pointsAwarded}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      {event.finalHomeGoals !== null ? (
-                                        wonCredit > 0 ? (
-                                          <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
-                                            {wonCredit}
-                                          </span>
-                                        ) : (
-                                          <span className="text-gray-400">0</span>
-                                        )
-                                      ) : (
-                                        <span className="text-gray-400">-</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      );
+              const eventEntries = Array.from(eventMap.values()).sort(
+                (a, b) => new Date(b.event.kickoffTime).getTime() - new Date(a.event.kickoffTime).getTime()
+              );
+              const selectedEvent =
+                eventEntries.find(({ event }) => event.id === selectedEventId) ?? null;
 
-                      // Mobil nézet: kártyák
-                      const mobileView = (
-                        <div className="grid gap-3 md:hidden">
-                          {bets.map((bet: any) => {
-                            let wonCredit = 0;
-                            if (
-                              event.finalHomeGoals !== null &&
-                              bet.pointsAwarded === 6 &&
-                              winCount > 0 &&
-                              bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin" &&
-                              totalDistributed > 0
-                            ) {
-                              wonCredit = Math.floor(totalDistributed / winCount);
-                            }
+              const renderEventDetails = (event: Bet["event"], eventBets: Bet[]) => {
+                const nonAdminBets = eventBets.filter((bet) => bet.user.username.toLowerCase() !== "admin");
+                const winners = nonAdminBets.filter((bet) => bet.pointsAwarded === 6);
+                const winCount = winners.length;
+                const totalDistributed = event.dailyPool?.totalDistributed || 0;
+
+                const calculateWonCredit = (bet: Bet) => {
+                  if (
+                    event.finalHomeGoals !== null &&
+                    bet.pointsAwarded === 6 &&
+                    winCount > 0 &&
+                    bet.user.username.toLowerCase() !== "admin" &&
+                    totalDistributed > 0
+                  ) {
+                    return Math.floor(totalDistributed / winCount);
+                  }
+                  return event.finalHomeGoals !== null ? 0 : null;
+                };
+
+                return eventBets.length === 0 ? (
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 p-3">
+                    <p className="font-semibold text-gray-700 dark:text-slate-300">Még nincs leadott tipp.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto hidden md:block">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-purple-50 dark:bg-purple-900/30 border-b border-purple-200 dark:border-purple-800">
+                            <th className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-slate-100">Játékos</th>
+                            <th className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-slate-100">Tippje</th>
+                            <th className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-slate-100">Pont</th>
+                            <th className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-slate-100">Nyeremény kredit</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                          {eventBets.map((bet) => {
+                            const wonCredit = calculateWonCredit(bet);
+                            const displayWonCredit = wonCredit ?? 0;
                             return (
-                              <div key={bet.id} className="border border-purple-200 dark:border-purple-800 rounded-xl p-3 bg-purple-50/40 dark:bg-purple-900/30">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="font-semibold text-gray-900">{bet.user.username}</span>
+                              <tr key={bet.id}>
+                                <td className="px-4 py-3 text-left font-semibold text-gray-900 dark:text-slate-100">{bet.user.username}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="font-bold text-purple-900 dark:text-purple-200 text-lg">{bet.predictedHomeGoals}–{bet.predictedAwayGoals}</span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
                                   <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
                                     bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
                                     bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
                                     bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                                     "bg-purple-50 text-purple-900"
-                                  } text-lg md:text-base font-extrabold px-3 py-1`}>
-                                      <span className="mr-1 text-xs text-gray-700 font-normal">szerzett pont:</span>{bet.pointsAwarded}
+                                  }`}>
+                                    {bet.pointsAwarded}
                                   </span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm mb-2">
-                                  <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
-                                    {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
-                                  </span>
-                                  <span className="text-gray-600">Tipp</span>
-                                </div>
-                                <div className="text-sm flex items-center justify-between">
-                                  <span className="text-gray-700">Nyeremény:</span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
                                   {event.finalHomeGoals !== null ? (
-                                    wonCredit > 0 ? (
+                                    displayWonCredit > 0 ? (
                                       <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
-                                        {wonCredit}
+                                        {displayWonCredit}
                                       </span>
                                     ) : (
                                       <span className="text-gray-400">0</span>
@@ -559,34 +480,138 @@ export default function OsszesTippekPage() {
                                   ) : (
                                     <span className="text-gray-400">-</span>
                                   )}
-                                </div>
-                              </div>
+                                </td>
+                              </tr>
                             );
                           })}
-                        </div>
-                      );
+                        </tbody>
+                      </table>
+                    </div>
 
-                      return (
-                        <>
-                          {tableView}
-                          {mobileView}
-                        </>
-                      );
-                    })()}
+                    <div className="grid gap-3 md:hidden">
+                      {eventBets.map((bet) => {
+                        const wonCredit = calculateWonCredit(bet);
+                        const displayWonCredit = wonCredit ?? 0;
+                        return (
+                          <div key={bet.id} className="border border-purple-200 dark:border-purple-800 rounded-xl p-3 bg-purple-50/40 dark:bg-purple-900/30">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-gray-900 dark:text-slate-100">{bet.user.username}</span>
+                              <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                                bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
+                                bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
+                                bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
+                                "bg-purple-50 text-purple-900"
+                              } text-lg md:text-base font-extrabold px-3 py-1`}>
+                                <span className="mr-1 text-xs text-gray-700 font-normal">szerzett pont:</span>{bet.pointsAwarded}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm mb-2">
+                              <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
+                                {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
+                              </span>
+                              <span className="text-gray-600 dark:text-slate-300">Tipp</span>
+                            </div>
+                            <div className="text-sm flex items-center justify-between">
+                              <span className="text-gray-700 dark:text-slate-300">Nyeremény:</span>
+                              {event.finalHomeGoals !== null ? (
+                                displayWonCredit > 0 ? (
+                                  <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                                    {displayWonCredit}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">0</span>
+                                )
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              };
+
+              return (
+                <>
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-purple-200 dark:border-purple-800 p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">Események</h2>
+                        <p className="text-sm text-gray-600 dark:text-slate-300">
+                          Kattints egy eseményre, és a kártya lenyílik a részletekkel együtt.
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+                        {eventEntries.length} esemény
+                      </span>
+                    </div>
+
+                    {eventEntries.length === 0 ? (
+                      <p className="font-semibold text-gray-700 dark:text-slate-300">Még nincs megjeleníthető esemény.</p>
+                    ) : (
+                      <div className="grid gap-2">
+                        {eventEntries.map(({ event, bets: eventBets }) => {
+                          const isSelected = selectedEventId === event.id;
+
+                          return (
+                            <div
+                              key={event.id}
+                              className={`rounded-xl border transition ${
+                                isSelected
+                                  ? "border-purple-400 bg-purple-50 dark:bg-purple-900/30 dark:border-purple-700"
+                                  : "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setSelectedEventId((current) => (current === event.id ? null : event.id))}
+                                className="w-full text-left rounded-xl px-4 py-3 transition hover:bg-gray-50/80 dark:hover:bg-slate-700/40"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <div className="font-bold text-gray-900 dark:text-slate-100">
+                                      {event.homeTeam} – {event.awayTeam}
+                                    </div>
+                                    <div className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                                      {event.league || "Ismeretlen liga"}
+                                    </div>
+                                    <div className="text-xs text-gray-600 dark:text-slate-300 mt-1">
+                                      {new Date(event.kickoffTime).toLocaleString("hu-HU", {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        timeZone: "Europe/Budapest",
+                                      })}
+                                    </div>
+                                  </div>
+                                  <span className={`text-xs font-semibold px-2 py-1 rounded-lg border ${
+                                    isSelected
+                                      ? "bg-purple-100 border-purple-200 text-purple-800 dark:bg-purple-900/40 dark:border-purple-800 dark:text-purple-200"
+                                      : "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-200"
+                                  }`}>
+                                    {event.finalHomeGoals !== null && event.finalAwayGoals !== null
+                                      ? `${event.finalHomeGoals} - ${event.finalAwayGoals}`
+                                      : event.status}
+                                  </span>
+                                </div>
+                              </button>
+
+                              {isSelected && (
+                                <div className="border-t border-purple-200 dark:border-purple-800 px-4 py-4">
+                                  {renderEventDetails(event, eventBets)}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  );
-                })}
-                {visibleEventsCount < events.length && (
-                  <div className="flex justify-center mt-6">
-                    <button
-                      className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition"
-                      onClick={() => setVisibleEventsCount(c => c + 10)}
-                    >
-                      További 10 esemény megjelenítése
-                    </button>
-                  </div>
-                )}
-              </>;
+                </>
+              );
             })()}
           </div>
         )}

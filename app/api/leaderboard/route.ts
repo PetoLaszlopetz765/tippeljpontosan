@@ -122,9 +122,25 @@ export async function GET(req: NextRequest) {
         perfectCount: Math.max(0, basePerfectCount + user.perfectCountAdjustment),
         totalWinnings: winningsByUser.get(user.id) || 0,
       };
-    }).sort((a, b) => b.points - a.points);
+    }).sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.credits !== a.credits) return b.credits - a.credits;
+      if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+      return a.username.localeCompare(b.username);
+    });
 
-    return NextResponse.json(leaderboard);
+    const visibleLeaderboard = leaderboard.filter((user) => user.role !== "ADMIN");
+    const rankByUserId = new Map<number, number>();
+    visibleLeaderboard.forEach((user, index) => {
+      rankByUserId.set(user.id, index + 1);
+    });
+
+    const leaderboardWithRank = leaderboard.map((user) => ({
+      ...user,
+      rank: user.role === "ADMIN" ? null : (rankByUserId.get(user.id) || null),
+    }));
+
+    return NextResponse.json(leaderboardWithRank);
   } catch (err) {
     console.error("Leaderboard error:", err);
     return NextResponse.json(
