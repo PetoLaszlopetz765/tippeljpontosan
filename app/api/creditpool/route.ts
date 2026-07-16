@@ -7,6 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 export async function GET(req: NextRequest) {
   try {
     const pool = await prisma.creditPool.findFirst();
+
     return NextResponse.json({
       totalDaily: pool?.totalDaily || 0,
       totalChampionship: pool?.totalChampionship || 0,

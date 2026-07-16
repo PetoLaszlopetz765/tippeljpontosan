@@ -404,7 +404,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-cyan-300 p-8">
             <h2 className="text-xl font-extrabold text-cyan-800 mb-4">📊 Összes tippek nézet export</h2>
             <p className="text-gray-700 mb-4">
-              Külön .xlsx export az Összes tippek oldal felhasználói nézetéhez (esemény, tippek, pontok, nyeremény).
+              Külön .xlsx export az Összes tippek oldal felhasználói nézetéhez (esemény, tippek, pontok, nyeremény, elköltött kredit).
             </p>
             <button
               onClick={handleAllBetsViewExport}

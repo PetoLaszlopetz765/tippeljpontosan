@@ -194,7 +194,6 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     // Eseményenkénti pool logika: minden eseménynek saját poolja van
     const totalCreditsSpent = allBets.reduce((sum, bet) => sum + (bet.creditSpent || 0), 0);
     const dailyAmount = Math.floor(totalCreditsSpent * 0.6);
-    const championshipAmount = totalCreditsSpent - dailyAmount;
     
     // Az esemény dátuma
     const eventDate = new Date(event.kickoffTime);
@@ -294,25 +293,11 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
         },
       });
       
-      // Bajnoki pool frissítése (globális)
-      await prisma.creditPool.upsert({
-        where: { id: 1 },
-        update: { totalChampionship: { increment: championshipAmount } },
-        create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
-      });
-      
       poolDistributed = true;
     } else {
       // Nincs nyertes: esemény pool marad és átgöngyölődik a következő eseményre
       // A dailyPool már tartalmazza a totalDaily összeget
       poolCarry = dailyPool.totalDaily + dailyPool.carriedFromPrevious;
-      
-      // Bajnoki pool frissítése (globális)
-      await prisma.creditPool.upsert({
-        where: { id: 1 },
-        update: { totalChampionship: { increment: championshipAmount } },
-        create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
-      });
     }
 
     console.log("✓ All done!");

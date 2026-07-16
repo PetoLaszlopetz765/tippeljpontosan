@@ -13,6 +13,7 @@
     "tool:delete-admin": "tsx tools/delete-admin.ts",
     "tool:list-users": "tsx tools/list-users.ts",
     "tool:list-pools": "tsx tools/list-pools.ts",
+    "tool:recalc-championship": "tsx tools/recalc-championship-pool.ts",
     "tool:diagnose-carry": "tsx tools/diagnose-pool-carryover.ts",
     "tool:fix-carry": "tsx tools/fix-pool-carryover.ts"
   },

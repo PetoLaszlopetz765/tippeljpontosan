@@ -36,6 +36,36 @@ export async function createFullBackupWorkbookBuffer() {
     XLSX.utils.book_append_sheet(workbook, sheet, toSheetName(model.name));
   }
 
+  // Computed helper sheet for reporting use-cases.
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      role: true,
+      credits: true,
+      bets: {
+        select: {
+          creditSpent: true,
+        },
+      },
+    },
+    orderBy: { id: "asc" },
+  });
+
+  const userStatsRows = users.map((user) => ({
+    userId: user.id,
+    username: user.username,
+    role: user.role,
+    aktualisKredit: user.credits,
+    elkoltottKredit: user.bets.reduce((sum, bet) => sum + (bet.creditSpent || 0), 0),
+    tippekDarabszama: user.bets.length,
+  }));
+
+  const userStatsSheet = XLSX.utils.json_to_sheet(
+    userStatsRows.length > 0 ? userStatsRows : [{ info: "Nincs adat" }]
+  );
+  XLSX.utils.book_append_sheet(workbook, userStatsSheet, toSheetName("UserStatsComputed"));
+
   const fileBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
   return fileBuffer;
 }

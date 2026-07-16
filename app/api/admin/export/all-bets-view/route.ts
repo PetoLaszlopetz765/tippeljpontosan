@@ -46,6 +46,14 @@ export async function GET(req: NextRequest) {
       groupedByEvent.get(bet.eventId)!.push(bet);
     }
 
+    const totalSpentByUserId = new Map<number, number>();
+    for (const bet of betsForView) {
+      totalSpentByUserId.set(
+        bet.userId,
+        (totalSpentByUserId.get(bet.userId) || 0) + (bet.creditSpent || 0)
+      );
+    }
+
     const rows: Array<Record<string, unknown>> = [];
 
     for (const [eventId, eventBets] of groupedByEvent.entries()) {
@@ -97,6 +105,7 @@ export async function GET(req: NextRequest) {
           vegeredmeny: resultText,
           poolAllapot: poolStateText,
           jatekos: username,
+          elkoltottKredit: totalSpentByUserId.get(bet.userId) || 0,
           tipp: `${bet.predictedHomeGoals}-${bet.predictedAwayGoals}`,
           pont: bet.pointsAwarded,
           nyeremenyKredit: wonCredit,

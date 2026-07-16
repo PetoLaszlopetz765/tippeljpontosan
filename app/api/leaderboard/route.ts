@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       role: string;
       tipsCountAdjustment: number;
       perfectCountAdjustment: number;
-      bets: Array<{ pointsAwarded: number }>;
+      bets: Array<{ pointsAwarded: number; creditSpent: number }>;
     }>;
 
     try {
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
           bets: {
             select: {
               pointsAwarded: true,
+              creditSpent: true,
             },
           },
         },
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
           bets: {
             select: {
               pointsAwarded: true,
+              creditSpent: true,
             },
           },
         },
@@ -111,6 +113,7 @@ export async function GET(req: NextRequest) {
     const leaderboard = users.map((user) => {
       const baseTipsCount = user.bets.length;
       const basePerfectCount = user.bets.filter((bet) => bet.pointsAwarded === 6).length;
+      const baseTotalSpent = user.bets.reduce((sum, bet) => sum + (bet.creditSpent || 0), 0);
 
       return {
         id: user.id,
@@ -120,6 +123,7 @@ export async function GET(req: NextRequest) {
         points: user.points,
         tipsCount: Math.max(0, baseTipsCount + user.tipsCountAdjustment),
         perfectCount: Math.max(0, basePerfectCount + user.perfectCountAdjustment),
+        totalSpent: baseTotalSpent,
         totalWinnings: winningsByUser.get(user.id) || 0,
       };
     }).sort((a, b) => {

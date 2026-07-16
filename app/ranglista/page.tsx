@@ -13,6 +13,7 @@ interface User {
   points: number;
   credits: number;
   totalWinnings: number;
+  totalSpent: number;
   role: string;
   tipsCount: number;
   perfectCount: number;
@@ -253,6 +254,7 @@ export default function RanglistaPage() {
         Pont: user.points,
         Kredit: user.credits,
         NyertOsszeg: user.totalWinnings || 0,
+        ElkoltottKredit: user.totalSpent || 0,
         TippekSzama: user.tipsCount,
         Telitalalat: user.perfectCount,
       }));
@@ -397,6 +399,7 @@ export default function RanglistaPage() {
                       <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Pontok</th>
                       <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Kredit</th>
                       <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Nyert összeg</th>
+                      <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Elköltött kredit</th>
                       <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Tippek száma</th>
                       <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Telitalálat</th>
                     </tr>
@@ -433,6 +436,11 @@ export default function RanglistaPage() {
                           <td className="px-4 py-4 text-center">
                             <span className="inline-block bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 font-bold text-emerald-900">
                               {user.totalWinnings || 0}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-block bg-rose-50 border border-rose-200 rounded-lg px-4 py-2 font-bold text-rose-900">
+                              {user.totalSpent || 0}
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center">
@@ -493,6 +501,12 @@ export default function RanglistaPage() {
                         <span className="text-xs text-gray-600">Nyert összeg</span>
                         <span className="inline-block bg-emerald-50 border border-emerald-200 rounded px-2 py-1 font-bold text-emerald-900 text-sm">
                           {user.totalWinnings || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Elköltött kredit</span>
+                        <span className="inline-block bg-rose-50 border border-rose-200 rounded px-2 py-1 font-bold text-rose-900 text-sm">
+                          {user.totalSpent || 0}
                         </span>
                       </div>
                     </div>
