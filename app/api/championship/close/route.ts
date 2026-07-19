@@ -13,19 +13,21 @@ interface UserRanking {
   id: number;
   username: string;
   points: number;
+  credits: number;
   perfectMatches: number; // telitalálatok száma
   fourPointMatches: number; // 4 pontos találatok
   threePointMatches: number; // 3 pontos találatok
   twoPointMatches: number; // 2 pontos találatok
 }
 
-// Holtverseny feloldása: több telitalálat, majd 4, majd 3, majd 2 pontos találatok
+// Holtverseny feloldása: több telitalálat, majd 4 pontos, majd 3 pontos találat, majd több kredit
 function compareUsers(a: UserRanking, b: UserRanking): number {
   if (b.points !== a.points) return b.points - a.points;
   if (b.perfectMatches !== a.perfectMatches) return b.perfectMatches - a.perfectMatches;
   if (b.fourPointMatches !== a.fourPointMatches) return b.fourPointMatches - a.fourPointMatches;
   if (b.threePointMatches !== a.threePointMatches) return b.threePointMatches - a.threePointMatches;
-  return b.twoPointMatches - a.twoPointMatches;
+  if (b.credits !== a.credits) return b.credits - a.credits;
+  return a.username.localeCompare(b.username);
 }
 
 export async function POST(req: NextRequest) {
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
         id: user.id,
         username: user.username,
         points: user.points,
+        credits: user.credits,
         perfectMatches: userBets.filter((b) => b.pointsAwarded === 6).length,
         fourPointMatches: userBets.filter((b) => b.pointsAwarded === 4).length,
         threePointMatches: userBets.filter((b) => b.pointsAwarded === 3).length,

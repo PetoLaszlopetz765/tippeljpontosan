@@ -5,13 +5,13 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 
 function compareUsers(a: any, b: any) {
-  // Pont, telitalálat, 4p, 3p, 2p
+  // Pont, telitalálat, 4p, 3p, kredit, név
   if (b.points !== a.points) return b.points - a.points;
   if (b.sixes !== a.sixes) return b.sixes - a.sixes;
   if (b.fours !== a.fours) return b.fours - a.fours;
   if (b.threes !== a.threes) return b.threes - a.threes;
-  if (b.twos !== a.twos) return b.twos - a.twos;
-  return 0;
+  if (b.credits !== a.credits) return b.credits - a.credits;
+  return a.username.localeCompare(b.username);
 }
 
 export async function POST(req: NextRequest) {

@@ -47,6 +47,8 @@ type LeaderboardUser = {
   role: string;
   tipsCount: number;
   perfectCount: number;
+  fourPointCount: number;
+  threePointCount: number;
 };
 
 export default function TegnapiEsemenyekPage() {
@@ -155,8 +157,10 @@ export default function TegnapiEsemenyekPage() {
     const sortUsers = (users: Array<LeaderboardUser & { computedPoints: number }>) =>
       users.sort((a, b) => {
         if (b.computedPoints !== a.computedPoints) return b.computedPoints - a.computedPoints;
-        if (b.credits !== a.credits) return b.credits - a.credits;
         if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+        if (b.fourPointCount !== a.fourPointCount) return b.fourPointCount - a.fourPointCount;
+        if (b.threePointCount !== a.threePointCount) return b.threePointCount - a.threePointCount;
+        if (b.credits !== a.credits) return b.credits - a.credits;
         return a.username.localeCompare(b.username);
       });
 

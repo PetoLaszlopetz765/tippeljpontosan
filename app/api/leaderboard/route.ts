@@ -113,6 +113,8 @@ export async function GET(req: NextRequest) {
     const leaderboard = users.map((user) => {
       const baseTipsCount = user.bets.length;
       const basePerfectCount = user.bets.filter((bet) => bet.pointsAwarded === 6).length;
+      const baseFourPointCount = user.bets.filter((bet) => bet.pointsAwarded === 4).length;
+      const baseThreePointCount = user.bets.filter((bet) => bet.pointsAwarded === 3).length;
       const baseTotalSpent = user.bets.reduce((sum, bet) => sum + (bet.creditSpent || 0), 0);
 
       return {
@@ -123,13 +125,17 @@ export async function GET(req: NextRequest) {
         points: user.points,
         tipsCount: Math.max(0, baseTipsCount + user.tipsCountAdjustment),
         perfectCount: Math.max(0, basePerfectCount + user.perfectCountAdjustment),
+        fourPointCount: baseFourPointCount,
+        threePointCount: baseThreePointCount,
         totalSpent: baseTotalSpent,
         totalWinnings: winningsByUser.get(user.id) || 0,
       };
     }).sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
-      if (b.credits !== a.credits) return b.credits - a.credits;
       if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+      if (b.fourPointCount !== a.fourPointCount) return b.fourPointCount - a.fourPointCount;
+      if (b.threePointCount !== a.threePointCount) return b.threePointCount - a.threePointCount;
+      if (b.credits !== a.credits) return b.credits - a.credits;
       return a.username.localeCompare(b.username);
     });
 

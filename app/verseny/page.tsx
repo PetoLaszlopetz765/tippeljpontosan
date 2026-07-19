@@ -14,6 +14,8 @@ interface User {
   role: string;
   tipsCount: number;
   perfectCount: number;
+  fourPointCount: number;
+  threePointCount: number;
 }
 
 interface Bet {
@@ -303,8 +305,10 @@ export default function VersenyPage() {
                       .slice() // copy to avoid mutating state
                       .sort((a, b) => {
                         if (b.points !== a.points) return b.points - a.points;
-                        if (b.credits !== a.credits) return b.credits - a.credits;
                         if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+                        if (b.fourPointCount !== a.fourPointCount) return b.fourPointCount - a.fourPointCount;
+                        if (b.threePointCount !== a.threePointCount) return b.threePointCount - a.threePointCount;
+                        if (b.credits !== a.credits) return b.credits - a.credits;
                         return a.username.localeCompare(b.username);
                       })
                       .map((user, index) => (
@@ -358,8 +362,10 @@ export default function VersenyPage() {
                 .slice()
                 .sort((a, b) => {
                   if (b.points !== a.points) return b.points - a.points;
-                  if (b.credits !== a.credits) return b.credits - a.credits;
                   if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+                  if (b.fourPointCount !== a.fourPointCount) return b.fourPointCount - a.fourPointCount;
+                  if (b.threePointCount !== a.threePointCount) return b.threePointCount - a.threePointCount;
+                  if (b.credits !== a.credits) return b.credits - a.credits;
                   return a.username.localeCompare(b.username);
                 })
                 .map((user, index) => (
